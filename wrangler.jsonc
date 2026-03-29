@@ -28,7 +28,7 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "subflare-vinext",
+			// "database_name": "subflare-vinext",
 			"database_id": "ca032790-da0e-46ad-a650-c33dc82053bf",
 			"migrations_dir": "drizzle"
 		}
