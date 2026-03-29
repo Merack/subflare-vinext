@@ -203,12 +203,12 @@ export default function SettingsClient({ initialChannels, initialPreferences }: 
     }
 
     if (!editingChannel && !activeDescriptor.validateConfig(configPayload)) {
-      toast.error("请填写完整配置");
+      toast.error("请填写完整且合法的配置");
       return;
     }
 
     if (editingChannel && hasAnyConfigValue(channelConfig) && !activeDescriptor.validateConfig(configPayload)) {
-      toast.error("如需更新配置，请填写完整字段");
+      toast.error("如需更新配置，请填写完整且合法的字段");
       return;
     }
 
@@ -509,10 +509,10 @@ export default function SettingsClient({ initialChannels, initialPreferences }: 
                 ))}
               </div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={handleSaveChannel}>
+                <Button onClick={handleSaveChannel}>
                   {editingChannel ? "更新" : "保存"}
                 </Button>
-                <Button size="sm" variant="ghost" onClick={resetForm}>取消</Button>
+                <Button variant="ghost" onClick={resetForm}>取消</Button>
               </div>
             </div>
           )}
