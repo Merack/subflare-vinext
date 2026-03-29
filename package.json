@@ -5,11 +5,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "vite build",
+    "build:next": "next build",
     "start": "next start",
     "lint": "eslint",
     "dev:vinext": "vite dev --port 3001",
-    "build:vinext": "vite build",
     "deploy:vinext": "vinext deploy",
     "db:migrations:apply": "wrangler d1 migrations apply DB --remote",
     "deploy": "pnpm run db:migrations:apply && pnpm run deploy:vinext"

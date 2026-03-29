@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2, Plus, Send, Pencil, Power, PowerOff, X, Loader2 } from "lucide-react";
+import { Trash2, Plus, Send, Pencil, Power, PowerOff, X, Loader2, CodeXml } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -599,6 +600,18 @@ export default function SettingsClient({ initialChannels, initialPreferences }: 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <div className="flex justify-center border-t pt-6">
+        <Link
+          href="https://github.com/Merack/subflare-vinext"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <CodeXml className="h-4 w-4" />
+          <span>subflare-vinext</span>
+        </Link>
+      </div>
     </div>
   );
 }
