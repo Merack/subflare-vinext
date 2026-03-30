@@ -53,7 +53,7 @@ export type NotificationEventStatus = (typeof NOTIFICATION_EVENT_STATUSES)[numbe
 
 // -----------------------------------------------------------------------------
 // [表] 订阅 (Subscriptions)
-// 用于存储用户添加的所有订阅项目，包括基础信息、费用、周期和到期时间。
+// 用于存储用户添加的所有订阅项目，包括基础信息、费用、周期和到期时间
 // -----------------------------------------------------------------------------
 export const subscriptions = sqliteTable(
   "subscriptions",
@@ -92,7 +92,7 @@ export const subscriptions = sqliteTable(
 
 // -----------------------------------------------------------------------------
 // [表] 通知渠道 (Notification Channels)
-// 存储用户配置的各类提醒渠道，例如 Telegram Bot Token 和 Chat ID。
+// 存储用户配置的各类提醒渠道，例如 Telegram Bot Token 和 Chat ID
 // -----------------------------------------------------------------------------
 export const notificationChannels = sqliteTable(
   "notification_channels",
@@ -115,7 +115,7 @@ export const notificationChannels = sqliteTable(
 
 // -----------------------------------------------------------------------------
 // [表] 通知事件/日志 (Notification Events)
-// 计划发送或已发送的通知消息记录，用于防止重复发送并提供发送状态追踪。
+// 计划发送或已发送的通知消息记录，用于防止重复发送并提供发送状态追踪
 // -----------------------------------------------------------------------------
 export const notificationEvents = sqliteTable(
   "notification_events",
@@ -195,7 +195,7 @@ export type RenewalType = (typeof RENEWAL_TYPES)[number];
 
 // -----------------------------------------------------------------------------
 // [表] 订阅历史 (Subscription History)
-// 记录订阅的续费操作，包括续费前后的日期、费用以及备注等。
+// 记录订阅的续费操作，包括续费前后的日期、费用以及备注等
 // -----------------------------------------------------------------------------
 export const subscriptionHistory = sqliteTable(
   "subscription_history",
@@ -230,7 +230,7 @@ export const subscriptionHistoryRelations = relations(subscriptionHistory, ({ on
 
 // -----------------------------------------------------------------------------
 // [表] 用户设置 (User Settings)
-// 存储用户的全局偏好设置，如时区和通知时间段。
+// 存储用户的全局偏好设置，如时区和通知时间段
 // -----------------------------------------------------------------------------
 export const userSettings = sqliteTable("user_settings", {
   id: integer("id").primaryKey({ autoIncrement: true }),

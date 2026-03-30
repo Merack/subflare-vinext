@@ -359,7 +359,7 @@ export default function SettingsClient({ initialChannels, initialPreferences }: 
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              影响通知发送时间和日期计算。系统会根据此时区判断是否在通知时间段内。
+              影响通知发送时间和日期计算. 系统会根据此时区判断是否在通知时间段内
             </p>
           </div>
 
@@ -399,7 +399,7 @@ export default function SettingsClient({ initialChannels, initialPreferences }: 
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              仅在这些小时（基于所选时区）发送通知，默认为 0 时。
+              仅在这些小时（基于所选时区）发送通知，默认为 0 时
             </p>
           </div>
 

@@ -1,7 +1,7 @@
 /**
  * 登录 API 路由
  *
- * 处理用户登录请求，验证凭据并创建会话。
+ * 处理用户登录请求，验证凭据并创建会话
  *
  * 环境变量配置：
  * - USERNAME: 登录用户名（可选，默认为 "admin"）
@@ -26,7 +26,7 @@ const loginSchema = z.object({
 /**
  * 处理登录 POST 请求
  *
- * 验证用户凭据，成功后创建会话并设置 HTTP-only Cookie。
+ * 验证用户凭据，成功后创建会话并设置 HTTP-only Cookie
  *
  * @param request - Next.js 请求对象
  * @returns JSON 响应：

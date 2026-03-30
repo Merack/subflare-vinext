@@ -6,7 +6,7 @@
  * - PUT: 更新指定 ID 的订阅信息
  * - DELETE: 删除指定 ID 的订阅
  *
- * 所有操作都需要用户认证，且只能操作当前用户自己的订阅数据。
+ * 所有操作都需要用户认证，且只能操作当前用户自己的订阅数据
  */
 
 import { NextRequest, NextResponse } from "next/server";

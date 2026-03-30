@@ -93,6 +93,7 @@ const webhookDescriptor: NotificationChannelDescriptor = {
   getSummary(config) {
     return {
       hasConfig: typeof config.url === "string" && config.url.length > 0,
+      // 这里需要对敏感信息脱敏处理后才能返回给前端
       summary: typeof config.url === "string" ? config.url : null,
     };
   },

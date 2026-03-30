@@ -4,20 +4,35 @@ Subflare 是一个运行在 Cloudflare Workers 上的订阅到期提醒管理应
 
 它用于集中管理各类订阅项目，跟踪到期时间、记录续费历史，并通过可扩展的通知渠道发送到期提醒
 
-(其实我还写了个基于[Opennext](https://opennext.js.org/cloudflare)的版本, 但是它的`getCloudflareContext()` 函数貌似有点问题, 导致cron任务获取DB时会报错, 折腾了好久都不行就暂时把仓库private了, 等后续Opennext修复了再open出来)
+(其实我还写了个基于[Opennext](https://opennext.js.org/cloudflare)的版本, 但是它的`getCloudflareContext` 函数貌似有点问题, 导致cron任务获取DB时会报错, 折腾了好久都不行就暂时把仓库private了, 等后续Opennext修复了再open出来)
+
+## 界面展示
+### dashboard
+![dashboard](img/dashboard.png)
+
+### 订阅管理
+![subscription](img/subscription.png)
+
+| 新增订阅 | 订阅续费历史 |
+|---|---|
+| <img src="img/subs-renew-form.png" width="100%"> | <img src="img/subs-renew-history.png" width="100%"> |
+
+### 设置页面
+![setting](img/settings.png)
+
+### 
 
 ## 部署到 Cloudflare Worker
-### 方案A: 点击图标快速部署 (推荐)
+### 方案A: 点击图标一键部署 (推荐)
 #### 1. 点击图标, 按照引导页完成部署  
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Merack/subflare-vinext)
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Merack/subflare-vinext)  
 
-#### 2. 设置系统登录账户
-找到部署的[Cloudflare Worker](https://dash.cloudflare.com/), 在设置页里设置变量和机密:
- - USERNAME
- - PASSWORD
+##### 部署页面填写参考
+注意这里填写的用户名密码是改订阅管理系统登录的用户名密码
+![deploy](img/deploy.png)
 
 
-### 方案B: 通过 wrangler 部署
+### 方案B: 通过 wrangler 部署 (需要要一点动手能力)
 
 #### 1. clone 代码并安装依赖
 
@@ -68,9 +83,8 @@ pnpm deploy
 - 订阅管理：新增、编辑、删除订阅项目
 - 到期提醒：按提前天数和提醒模式发送通知
 - 多时段通知：支持按时区配置多个通知时段
-- 双通知模式: 支持从第n天起每天触发和只在第n天触发定时任务两种模式
 - 自动续费处理：订阅到期后可自动推进下一周期并记录历史
-- 汇总视图：提供仪表盘与近期到期订阅视图
+- 汇总视图：提供多维度汇总数据, 多国货币汇率自动转换, 年月统计视图切换等
 - 通知渠道扩展：通知渠道架构设计为可扩展
 - Cloudflare 强力驱动：面向 Cloudflare Workers 运行环境设计
 
@@ -116,6 +130,8 @@ drizzle.config.ts          # Drizzle 远程 D1 配置
 ## 通知渠道
  - Telegram
  - webhook
+
+贡献通知渠道: [new_channel.md](doc/new_channel.md)
 
 ## 本地开发
 

@@ -19,7 +19,7 @@ export default async function HomePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              系统检测到您尚未设置账户密码。请前往 Cloudflare Dashboard 配置以下环境变量：
+              系统检测到您尚未设置账户密码, 请前往 Cloudflare Dashboard 配置以下环境变量：
             </p>
             <div className="bg-muted p-3 rounded-md space-y-2">
               <div>

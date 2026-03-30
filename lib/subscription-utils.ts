@@ -67,8 +67,8 @@ export function toDateInput(date: Date | null | undefined): string {
 /**
  * 根据计费周期推进到期日期
  *
- * 计算给定日期经过指定数量的计费周期后的新日期。
- * 例如：月付订阅在 3月15日 到期，推进一个月后为 4月15日。
+ * 计算给定日期经过指定数量的计费周期后的新日期
+ * 例如：月付订阅在 3月15日 到期，推进一个月后为 4月15日
  *
  * @param expireDate - 当前到期日期
  * @param billingCycle - 计费周期类型
@@ -112,8 +112,8 @@ export function advanceExpireDate(expireDate: Date, billingCycle: BillingCycle, 
 /**
  * 根据开始日期计算到期日期
  *
- * 给定订阅开始日期、计费周期和周期数，计算出到期日期。
- * 主要用于创建订阅时自动计算首次到期日期。
+ * 给定订阅开始日期、计费周期和周期数，计算出到期日期
+ * 主要用于创建订阅时自动计算首次到期日期
  *
  * @param startDate - 订阅开始日期 (YYYY-MM-DD 格式字符串)
  * @param billingCycle - 计费周期类型
@@ -149,8 +149,8 @@ export function getDaysLeft(expireDate: Date) {
 /**
  * 获取订阅的有效状态信息
  *
- * 综合考虑订阅的原始状态、到期时间和提醒设置，计算出实际显示状态。
- * 用于在 UI 中正确展示订阅的当前状态（如是否需要提醒续费、是否已过期等）。
+ * 综合考虑订阅的原始状态、到期时间和提醒设置，计算出实际显示状态
+ * 用于在 UI 中正确展示订阅的当前状态（如是否需要提醒续费、是否已过期等）
  *
  * @param subscription - 包含到期日期、状态和提醒天数的订阅对象
  * @returns 包含状态信息的对象
@@ -193,7 +193,7 @@ export function getEffectiveStatus(subscription: Pick<Subscription, "expireDate"
 /**
  * 获取状态徽章的样式变体
  *
- * 根据订阅状态和是否过期，返回对应的 Badge 组件样式变体。
+ * 根据订阅状态和是否过期，返回对应的 Badge 组件样式变体
  *
  * @param status - 订阅状态
  * @param isExpired - 是否已过期
@@ -213,7 +213,7 @@ export function getStatusBadgeVariant(status: SubscriptionStatus, isExpired: boo
 /**
  * 获取状态的显示标签
  *
- * 返回订阅状态的中文显示文本，优先处理过期状态。
+ * 返回订阅状态的中文显示文本，优先处理过期状态
  *
  * @param status - 订阅状态
  * @param isExpired - 是否已过期
@@ -232,8 +232,8 @@ export function getStatusLabel(status: SubscriptionStatus, isExpired: boolean): 
 /**
  * 获取计费周期的显示标签
  *
- * 根据计费周期类型和数量，生成用户友好的显示文本。
- * 当周期数量大于 1 时，会显示数量（如 "3 每月"）。
+ * 根据计费周期类型和数量，生成用户友好的显示文本
+ * 当周期数量大于 1 时，会显示数量（如 "3 每月"）
  *
  * @param subscription - 包含计费周期和周期数量的订阅对象
  * @returns 计费周期的显示文本，如果无计费周期则返回 null

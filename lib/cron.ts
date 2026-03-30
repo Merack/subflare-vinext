@@ -21,7 +21,7 @@ import { getDb } from "@/db";
  * 将 UTC 日期转换为指定时区的本地时间
  * 
  * 该函数用于将 UTC 时间转换为用户所在时区的本地时间，
- * 以便在正确的时间触发提醒通知。
+ * 以便在正确的时间触发提醒通知
  * 
  * @param {Date} utcDate - UTC 日期对象
  * @param {string} timezone - IANA 时区标识符（如 "Asia/Shanghai"、"America/New_York"）

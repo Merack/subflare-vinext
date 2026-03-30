@@ -456,7 +456,7 @@ export default function SubscriptionsClient({ initialSubscriptions }: Subscripti
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除订阅「{deleteTarget?.name}」吗？此操作不可撤销。
+              确定要删除订阅「{deleteTarget?.name}」吗？此操作不可撤销
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

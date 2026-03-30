@@ -32,7 +32,7 @@ const subscriptionSchema = z.object({
 // 路径: /api/subscriptions
 // ============================================================================
 export async function GET() {
-  // 获取当前会话，验证用户是否已登录。如果未登录将抛出异常。
+  // 获取当前会话，验证用户是否已登录. 如果未登录将抛出异常
   const session = await requireApiAuth();
   const db = await getDb();
   

@@ -16,7 +16,7 @@ export default function NotFound() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            抱歉，您访问的页面不存在或已被移除。
+            抱歉，您访问的页面不存在或已被移除
           </p>
           <Link href="/">
             <Button className="w-full">
