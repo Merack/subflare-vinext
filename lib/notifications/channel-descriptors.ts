@@ -6,6 +6,7 @@ import { getWecomBotSummary, validateWecomBotConfig } from "./wecombot";
 import { getBarkSummary, validateBarkConfig } from "./bark";
 import { getNotifyXSummary, validateNotifyXConfig } from "./notifyx";
 import { getResendSummary, validateResendConfig } from "./resend";
+import { getSmtpSummary, validateSmtpConfig } from "./smtp-config";
 
 function maskMiddle(value: string, left = 2, right = 2): string {
   if (value.length <= left + right) return value;
@@ -212,6 +213,81 @@ const resendDescriptor: NotificationChannelDescriptor = {
   },
 };
 
+const smtpDescriptor: NotificationChannelDescriptor = {
+  type: "smtp",
+  label: "SMTP",
+  namePlaceholder: "我的 SMTP",
+  fields: [
+    {
+      key: "host",
+      label: "Host",
+      placeholder: "smtp.example.com",
+      requiredOnCreate: true,
+      allowBlankOnEdit: true,
+      description: "请输入 SMTP 服务器地址. 编辑时留空表示保持原值不变.",
+    },
+    {
+      key: "port",
+      label: "Port",
+      placeholder: "587",
+      requiredOnCreate: true,
+      allowBlankOnEdit: true,
+      description: "请输入 1-65535 之间的端口号. 编辑时留空表示保持原值不变.",
+    },
+    {
+      key: "secure",
+      label: "加密方式",
+      requiredOnCreate: true,
+      inputType: "select",
+      options: [
+        { value: "ssl_tls", label: "SSL/TLS (通常 465)" },
+        { value: "starttls", label: "STARTTLS (通常 587)" },
+        { value: "none", label: "无加密" },
+      ],
+      description: "请选择 SMTP 连接加密方式.",
+    },
+    {
+      key: "username",
+      label: "Username",
+      placeholder: "user@example.com",
+      requiredOnCreate: true,
+      allowBlankOnEdit: true,
+      description: "请输入 SMTP 用户名. 编辑时留空表示保持原值不变.",
+    },
+    {
+      key: "password",
+      label: "Password",
+      placeholder: "••••••••",
+      requiredOnCreate: true,
+      allowBlankOnEdit: true,
+      inputType: "password",
+      description: "请输入 SMTP 密码或授权码. 编辑时留空表示保持原值不变.",
+    },
+    {
+      key: "from",
+      label: "From",
+      placeholder: "notice@example.com",
+      requiredOnCreate: true,
+      allowBlankOnEdit: true,
+      description: "请输入发件邮箱地址. 编辑时留空表示保持原值不变.",
+    },
+    {
+      key: "to",
+      label: "To",
+      placeholder: "user@example.com",
+      requiredOnCreate: true,
+      allowBlankOnEdit: true,
+      description: "请输入接收通知的邮箱地址. 编辑时留空表示保持原值不变.",
+    },
+  ],
+  validateConfig(config) {
+    return validateSmtpConfig(config);
+  },
+  getSummary(config) {
+    return getSmtpSummary(config);
+  },
+};
+
 export const channelDescriptors: Record<ChannelType, NotificationChannelDescriptor> = {
   telegram: telegramDescriptor,
   webhook: webhookDescriptor,
@@ -219,6 +295,7 @@ export const channelDescriptors: Record<ChannelType, NotificationChannelDescript
   bark: barkDescriptor,
   notifyx: notifyXDescriptor,
   resend: resendDescriptor,
+  smtp: smtpDescriptor,
 };
 
 export function getChannelDescriptor(type: string): NotificationChannelDescriptor | undefined {

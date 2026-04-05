@@ -34,7 +34,7 @@ export const BILLING_CYCLES = ["daily", "monthly", "quarterly", "yearly", "once"
 export type BillingCycle = (typeof BILLING_CYCLES)[number];
 
 // 通知渠道类型枚举
-export const CHANNEL_TYPES = ["telegram", "webhook", "wecombot", "bark", "notifyx", "resend"] as const;
+export const CHANNEL_TYPES = ["telegram", "webhook", "wecombot", "bark", "notifyx", "resend", "smtp"] as const;
 export type ChannelType = (typeof CHANNEL_TYPES)[number];
 
 export const NOTIFY_DELIVERY_MODES = ["every_slot", "once_per_day"] as const;
