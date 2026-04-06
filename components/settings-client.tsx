@@ -213,11 +213,6 @@ export default function SettingsClient({ initialChannels, initialPreferences }: 
       return;
     }
 
-    if (editingChannel && hasAnyConfigValue(channelConfig) && !activeDescriptor.validateConfig(configPayload)) {
-      toast.error("如需更新配置，请填写完整且合法的字段");
-      return;
-    }
-
     try {
       if (editingChannel) {
         const payload: {

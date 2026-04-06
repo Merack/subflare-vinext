@@ -15,7 +15,10 @@ export class TelegramStrategy implements NotificationStrategy {
   readonly type = "telegram";
 
   validateConfig(config: Record<string, unknown>): boolean {
-    return typeof config.chatId === "string" && config.chatId.length > 0;
+    return typeof config.chatId === "string"
+      && config.chatId.trim().length > 0
+      && typeof config.botToken === "string"
+      && config.botToken.trim().length > 0;
   }
 
   async send(
