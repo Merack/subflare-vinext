@@ -1,4 +1,4 @@
-CREATE TABLE `notification_channels` (
+CREATE TABLE IF NOT EXISTS `notification_channels` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`type` text NOT NULL,
@@ -9,8 +9,8 @@ CREATE TABLE `notification_channels` (
 	`last_error` text
 );
 --> statement-breakpoint
-CREATE INDEX `notification_channels_user_enabled_idx` ON `notification_channels` (`user_id`,`enabled`,`type`);--> statement-breakpoint
-CREATE TABLE `notification_events` (
+CREATE INDEX IF NOT EXISTS `notification_channels_user_enabled_idx` ON `notification_channels` (`user_id`,`enabled`,`type`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `notification_events` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`subscription_id` integer NOT NULL,
 	`channel_id` integer NOT NULL,
@@ -29,10 +29,10 @@ CREATE TABLE `notification_events` (
 	FOREIGN KEY (`channel_id`) REFERENCES `notification_channels`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `notification_events_dedup_unique` ON `notification_events` (`subscription_id`,`channel_id`,`trigger_date`,`offset_days`);--> statement-breakpoint
-CREATE INDEX `notification_events_status_trigger_idx` ON `notification_events` (`status`,`trigger_date`);--> statement-breakpoint
-CREATE INDEX `notification_events_subscription_local_date_idx` ON `notification_events` (`subscription_id`,`trigger_local_date_key`,`offset_days`);--> statement-breakpoint
-CREATE TABLE `subscription_history` (
+CREATE UNIQUE INDEX IF NOT EXISTS `notification_events_dedup_unique` ON `notification_events` (`subscription_id`,`channel_id`,`trigger_date`,`offset_days`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `notification_events_status_trigger_idx` ON `notification_events` (`status`,`trigger_date`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `notification_events_subscription_local_date_idx` ON `notification_events` (`subscription_id`,`trigger_local_date_key`,`offset_days`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `subscription_history` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`subscription_id` integer NOT NULL,
 	`renewal_type` text DEFAULT 'manual' NOT NULL,
@@ -44,8 +44,8 @@ CREATE TABLE `subscription_history` (
 	FOREIGN KEY (`subscription_id`) REFERENCES `subscriptions`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `subscription_history_subscription_idx` ON `subscription_history` (`subscription_id`);--> statement-breakpoint
-CREATE TABLE `subscriptions` (
+CREATE INDEX IF NOT EXISTS `subscription_history_subscription_idx` ON `subscription_history` (`subscription_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `subscriptions` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`name` text NOT NULL,
@@ -66,8 +66,8 @@ CREATE TABLE `subscriptions` (
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX `subscriptions_user_expire_idx` ON `subscriptions` (`user_id`,`expire_date`,`status`);--> statement-breakpoint
-CREATE TABLE `user_settings` (
+CREATE INDEX IF NOT EXISTS `subscriptions_user_expire_idx` ON `subscriptions` (`user_id`,`expire_date`,`status`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `user_settings` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`timezone` text DEFAULT 'UTC' NOT NULL,
@@ -77,4 +77,4 @@ CREATE TABLE `user_settings` (
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `user_settings_user_id_unique` ON `user_settings` (`user_id`);
+CREATE UNIQUE INDEX IF NOT EXISTS `user_settings_user_id_unique` ON `user_settings` (`user_id`);
