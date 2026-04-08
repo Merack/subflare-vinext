@@ -23,7 +23,7 @@ Subflare 是一个运行在 Cloudflare Workers 上的订阅到期提醒管理应
 ### 
 
 ## 部署到 Cloudflare Worker
-### 方案A: 点击图标一键部署 (推荐)
+### 方案A: 点击图标一键部署 (推荐, 步骤最少但是无法同步后续代码更新)
 #### 1. 点击图标, 按照引导页完成部署  
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Merack/subflare-vinext)  
 
@@ -31,8 +31,44 @@ Subflare 是一个运行在 Cloudflare Workers 上的订阅到期提醒管理应
 注意这里填写的用户名密码是改订阅管理系统登录的用户名密码
 ![deploy](img/deploy.png)
 
+### 方案B: 通过 GitHub Actions 部署(推荐, 需要获取多个令牌, 但是易于同步后续代码更新)
+适合已经 fork 到自己 GitHub 仓库, 希望在 push 后自动部署到 Cloudflare Workers 的场景
 
-### 方案B: 通过 wrangler 部署 (需要要一点动手能力)
+#### 1. 准备 Cloudflare 资源
+先在 Cloudflare 中创建以下资源, 并记下对应 id:
+- D1 数据库 id
+- KV Namespace id
+- Cloudflare Account ID
+- Cloudflare API Token
+
+其中 API Token 需要至少具备 Workers、D1、KV 的相关权限, 用于 GitHub Action 执行部署  
+推荐在创建API Token时选择worker模板, 然后再在模板中添加权限: D1, 编辑
+
+#### 2. 在 GitHub 仓库中开启 Actions
+fork代码后点击仓库顶部的Actions, 选择开启action
+
+#### 3. 在 GitHub 仓库中配置 Actions Secrets
+打开仓库 `Settings` -> `Secrets and variables` -> `Actions`, 新增以下 `Repository secrets`:
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `D1_ID`
+- `KV_ID`
+
+`.github/workflows/deploy.yml` 会在运行时读取这些 secrets, 并调用 `scripts/fill-wrangler-placeholders.sh` 把它们填充到部署配置里
+
+#### 4. 触发部署
+- 在初次fork仓库后请在action页面下选择`Deploy to Cloudflare`, 手动点击 `Run workflow`完成初次部署 (重要!!!)
+- 后续使用GitHub 的sync fork 后自动部署新代码
+
+#### 5. 首次部署后的检查
+部署完成后, 建议到 GitHub Actions 查看日志, 确认 deploy 步骤成功；再到 Cloudflare Dashboard 中检查 Worker 是否已更新
+
+#### 6. 在Cloudflare worker后台设置用户名密码
+进到worker项目后台添加一下变量
+- `USERNAME`
+- `PASSWORD`
+
+### 方案C: 通过 wrangler 部署 (不推荐, 自定义程度高但是步骤复杂)
 
 #### 1. clone 代码并安装依赖
 
