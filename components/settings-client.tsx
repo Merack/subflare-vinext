@@ -18,6 +18,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Trash2, Plus, Send, Pencil, Power, PowerOff, X, Loader2, CodeXml } from "lucide-react";
 import {
   Select,
@@ -33,6 +48,7 @@ import {
 import { Separator } from "./ui/separator";
 
 type NotifyDeliveryMode = "every_slot" | "once_per_day";
+type NotificationEventStatus = "sent" | "failed" | "skipped";
 
 type ChannelType = (typeof channelTypeOptions)[number]["value"];
 
@@ -45,6 +61,17 @@ interface Channel {
   enabled: boolean;
   hasConfig: boolean;
   summary: string | null;
+}
+
+interface NotificationEventRecord {
+  id: number;
+  createdAt: string | null;
+  sentAt: string | null;
+  subscriptionName: string;
+  channelName: string;
+  status: NotificationEventStatus;
+  offsetDays: number;
+  error: string | null;
 }
 
 interface SettingsPreferences {
@@ -116,6 +143,22 @@ function hasAnyConfigValue(config: ChannelConfig): boolean {
   return Object.values(config).some((value) => value.trim() !== "");
 }
 
+function formatEventTime(sentAt: string | null, createdAt: string | null): string {
+  const raw = sentAt ?? createdAt;
+  if (!raw) return "-";
+  return new Date(raw).toLocaleString("zh-CN", { hour12: false });
+}
+
+function formatEventStatus(status: NotificationEventStatus): string {
+  if (status === "sent") return "成功";
+  if (status === "failed") return "失败";
+  return "跳过";
+}
+
+function formatOffsetDays(offsetDays: number): string {
+  return offsetDays === 0 ? "到期当天" : `提前 ${offsetDays} 天`;
+}
+
 export default function SettingsClient({ initialChannels, initialPreferences }: SettingsClientProps) {
   const defaultChannelType = getDefaultChannelType();
   const [channels, setChannels] = useState<Channel[]>(initialChannels);
@@ -133,6 +176,12 @@ export default function SettingsClient({ initialChannels, initialPreferences }: 
   const [notifyDeliveryMode, setNotifyDeliveryMode] = useState<NotifyDeliveryMode>(initialPreferences.notifyDeliveryMode);
   const [hourInput, setHourInput] = useState("");
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const [eventDialogOpen, setEventDialogOpen] = useState(false);
+  const [eventRecords, setEventRecords] = useState<NotificationEventRecord[]>([]);
+  const [eventRecordsLoading, setEventRecordsLoading] = useState(false);
+  const [cleanupMonths, setCleanupMonths] = useState("6");
+  const [cleaningEvents, setCleaningEvents] = useState(false);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
   const activeDescriptor = useMemo(() => getChannelDescriptor(channelType), [channelType]);
 
@@ -146,6 +195,21 @@ export default function SettingsClient({ initialChannels, initialPreferences }: 
       toast.error("加载通知渠道失败");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEventRecords = async () => {
+    setEventRecordsLoading(true);
+    try {
+      const res = await fetch("/api/settings/notification-events");
+      const data = await res.json() as { items?: NotificationEventRecord[] };
+      if (!res.ok) throw new Error();
+      setEventRecords(data.items ?? []);
+      setEventDialogOpen(true);
+    } catch {
+      toast.error("加载通知记录失败");
+    } finally {
+      setEventRecordsLoading(false);
     }
   };
 
@@ -340,6 +404,34 @@ export default function SettingsClient({ initialChannels, initialPreferences }: 
     }
   };
 
+  const handleCleanupEvents = async () => {
+    const months = parseInt(cleanupMonths, 10);
+    if (isNaN(months) || months < 1) {
+      toast.error("请输入大于等于 1 的月份数");
+      return;
+    }
+
+    setCleaningEvents(true);
+    try {
+      const res = await fetch("/api/settings/notification-events", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ months }),
+      });
+      const data = await res.json() as { deletedCount?: number };
+      if (!res.ok) throw new Error();
+      toast.success(`已清理 ${data.deletedCount ?? 0} 条通知记录`);
+      setClearConfirmOpen(false);
+      if (eventDialogOpen) {
+        void fetchEventRecords();
+      }
+    } catch {
+      toast.error("清理失败");
+    } finally {
+      setCleaningEvents(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
       <h1 className="text-2xl font-semibold">设置</h1>
@@ -364,7 +456,7 @@ export default function SettingsClient({ initialChannels, initialPreferences }: 
             </p>
           </div>
 
-          <Separator/>
+          <Separator />
 
           <div className="space-y-2">
             <Label>通知时间段（小时）</Label>
@@ -404,7 +496,7 @@ export default function SettingsClient({ initialChannels, initialPreferences }: 
             </p>
           </div>
 
-          <Separator/>
+          <Separator />
 
           <div className="space-y-2">
             <Label>通知频率</Label>
@@ -584,6 +676,111 @@ export default function SettingsClient({ initialChannels, initialPreferences }: 
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">通知事件</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <Label>最近 50 条发送记录</Label>
+              <p className="text-xs text-muted-foreground">
+                查看最近通知发送结果，用于排查发送状态和错误信息
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => void fetchEventRecords()} disabled={eventRecordsLoading}>
+              {eventRecordsLoading ? "加载中..." : "查看最近记录"}
+            </Button>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <Label>清理历史记录</Label>
+              <p className="text-xs text-muted-foreground">
+                删除指定月份之前的通知发送记录，此操作不可恢复
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={1}
+                value={cleanupMonths}
+                onChange={(e) => setCleanupMonths(e.target.value)}
+                className="w-24"
+              />
+              <span className="text-sm text-muted-foreground">个月前</span>
+              <Button variant="destructive" onClick={() => setClearConfirmOpen(true)} disabled={cleaningEvents}>
+                清理记录
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={eventDialogOpen} onOpenChange={setEventDialogOpen}>
+        <DialogContent className="sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>最近 50 条发送记录</DialogTitle>
+            <DialogDescription>
+              展示最近的通知发送结果与错误信息
+            </DialogDescription>
+          </DialogHeader>
+          {eventRecords.length === 0 ? (
+            <p className="text-sm text-muted-foreground">暂无发送记录</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>时间</TableHead>
+                  <TableHead>订阅名称</TableHead>
+                  <TableHead>渠道名称</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead>提前天数</TableHead>
+                  <TableHead>错误信息</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {eventRecords.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell>{formatEventTime(record.sentAt, record.createdAt)}</TableCell>
+                    <TableCell>{record.subscriptionName}</TableCell>
+                    <TableCell>{record.channelName}</TableCell>
+                    <TableCell>{formatEventStatus(record.status)}</TableCell>
+                    <TableCell>{formatOffsetDays(record.offsetDays)}</TableCell>
+                    <TableCell className="max-w-48 truncate">{record.error || "-"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认清理历史记录</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要清理 {cleanupMonths || "0"} 个月前的通知发送记录吗？此操作不可恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleCleanupEvents();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {cleaningEvents ? "清理中..." : "确认清理"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>

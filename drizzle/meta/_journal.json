@@ -15,6 +15,20 @@
       "when": 1774627898480,
       "tag": "0001_strong_the_call",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1776357777069,
+      "tag": "0002_jittery_sharon_carter",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1776359559063,
+      "tag": "0003_past_nico_minoru",
+      "breakpoints": true
     }
   ]
 }

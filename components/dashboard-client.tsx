@@ -375,7 +375,7 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
                 >
                   <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${sym}${v.toFixed(0)}`} />
                   <YAxis type="category" dataKey="category" tick={{ fontSize: 11 }} width={52} />
-                  <Tooltip formatter={(v: number) => [`${sym}${v.toFixed(2)}`, "支出"]} />
+                  <Tooltip formatter={(value) => [typeof value === "number" ? `${sym}${value.toFixed(2)}` : `${sym}${value ?? ""}`, "支出"]} />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                     {categoryChartData.map((_, i) => (
                       <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />

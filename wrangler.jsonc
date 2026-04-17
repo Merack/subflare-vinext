@@ -35,12 +35,34 @@
 	],
 	"kv_namespaces": [
 		{
-		  "binding": "KV",
-		  "id": "__KV_ID__"
+			"binding": "KV",
+			"id": "__KV_ID__"
 		}
-    ],
+	],
 	"triggers": {
-		"crons": ["0 * * * *"]
+		"crons": [
+			"0 * * * *"
+		]
+	},
+	"env": {
+		"development": {
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_id": "ca032790-da0e-46ad-a650-c33dc82053bf",
+					"migrations_dir": "drizzle"
+				}
+			],
+			"kv_namespaces": [
+				{
+					"binding": "KV",
+					"id": "19ce58a4b90c4cfea0ed238833eeea89"
+				}
+			],
+			"images": {
+				"binding": "IMAGES"
+			},
+		}
 	},
 	/**
 	 * Smart Placement
