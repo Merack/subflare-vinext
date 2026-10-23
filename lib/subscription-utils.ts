@@ -65,6 +65,18 @@ export function toDateInput(date: Date | null | undefined): string {
 }
 
 /**
+ * 判断是否为合法的 IANA 时区（非法时区会让 toLocaleString / Intl 抛 RangeError）
+ */
+export function isValidTimeZone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * 根据计费周期推进到期日期
  *
  * 计算给定日期经过指定数量的计费周期后的新日期

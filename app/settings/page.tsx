@@ -4,7 +4,7 @@ import { requirePageAuth } from "@/lib/session";
 import { eq } from "drizzle-orm";
 import AppLayout from "@/components/app-layout";
 import SettingsClient from "@/components/settings-client";
-import { getChannelDescriptor } from "@/lib/notifications/channel-descriptors";
+import { getChannelSummary } from "@/lib/notifications/channel-descriptors";
 
 interface SettingsChannelItem {
   id: number;
@@ -19,21 +19,6 @@ interface SettingsPreferences {
   timezone: string;
   notifyHours: number[];
   notifyDeliveryMode: "every_slot" | "once_per_day";
-}
-
-function getChannelSummary(type: string, configRaw: string) {
-  try {
-    const descriptor = getChannelDescriptor(type);
-    const config = JSON.parse(configRaw) as Record<string, unknown>;
-
-    if (!descriptor) {
-      return { hasConfig: false, summary: null };
-    }
-
-    return descriptor.getSummary(config);
-  } catch {
-    return { hasConfig: false, summary: null };
-  }
 }
 
 function parseNotifyHours(raw: string) {

@@ -14,7 +14,7 @@ import { and, eq, lte } from "drizzle-orm";
 import { subscriptions, notificationChannels, subscriptionHistory, userSettings } from "@/db/schema";
 import { dispatchNotification } from "@/lib/notifications/dispatcher";
 import { buildExpiryNotification } from "@/lib/notifications/message";
-import { advanceExpireDate } from "@/lib/subscription-utils";
+import { advanceExpireDate, isValidTimeZone } from "@/lib/subscription-utils";
 import { SINGLE_USER_ID } from "@/lib/session";
 import { getDb } from "@/db";
 
@@ -97,7 +97,9 @@ export async function runCron(): Promise<{ sent: number; skipped?: boolean }> {
     .where(eq(userSettings.userId, SINGLE_USER_ID))
     .limit(1);
 
-  const timezone = settings?.timezone ?? "UTC";
+  // 库里的时区非法时会抛 RangeError 让整个定时任务停摆, 兜底为 UTC
+  const savedTimezone = settings?.timezone ?? "UTC";
+  const timezone = isValidTimeZone(savedTimezone) ? savedTimezone : "UTC";
   const notifyDeliveryMode = settings?.notifyDeliveryMode ?? "every_slot";
 
   // 获取用户配置的提醒小时数，默认为 [0]（午夜 0 点）

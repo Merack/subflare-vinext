@@ -4,7 +4,7 @@ import { notificationChannels, CHANNEL_TYPES } from "@/db/schema";
 import { requireApiAuth } from "@/lib/session";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { getChannelDescriptor } from "@/lib/notifications/channel-descriptors";
+import { getChannelDescriptor, getChannelSummary } from "@/lib/notifications/channel-descriptors";
 
 const channelSchema = z.object({
   type: z.enum(CHANNEL_TYPES),
@@ -12,21 +12,6 @@ const channelSchema = z.object({
   config: z.record(z.string(), z.unknown()),
   enabled: z.boolean().default(true),
 });
-
-function getChannelSummary(type: string, configRaw: string) {
-  try {
-    const descriptor = getChannelDescriptor(type);
-    const config = JSON.parse(configRaw) as Record<string, unknown>;
-
-    if (!descriptor) {
-      return { hasConfig: false, summary: null };
-    }
-
-    return descriptor.getSummary(config);
-  } catch {
-    return { hasConfig: false, summary: null };
-  }
-}
 
 export async function GET() {
   const session = await requireApiAuth();

@@ -302,6 +302,25 @@ export function getChannelDescriptor(type: string): NotificationChannelDescripto
   return channelDescriptors[type as ChannelType];
 }
 
+/** 从库里存的 config JSON 生成列表用的摘要（配置损坏时返回空摘要） */
+export function getChannelSummary(type: string, configRaw: string): {
+  hasConfig: boolean;
+  summary: string | null;
+} {
+  try {
+    const descriptor = getChannelDescriptor(type);
+    const config = JSON.parse(configRaw) as Record<string, unknown>;
+
+    if (!descriptor) {
+      return { hasConfig: false, summary: null };
+    }
+
+    return descriptor.getSummary(config);
+  } catch {
+    return { hasConfig: false, summary: null };
+  }
+}
+
 export const channelTypeOptions = CHANNEL_TYPES.map((type) => ({
   value: type,
   label: channelDescriptors[type].label,

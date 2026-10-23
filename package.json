@@ -6,8 +6,6 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "build:next": "next build",
-    "start": "next start",
     "lint": "eslint",
     "check:notify": "node --experimental-strip-types scripts/check-notification-message.ts",
     "check:dates": "node --experimental-strip-types scripts/check-subscription-dates.ts",
