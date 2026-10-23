@@ -228,7 +228,7 @@ export default function DashboardClient({ initialData, initialExchangeRates, tim
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
         {cards.map((card, i) => (
           <Card key={card.title} className={i === 0 ? "col-span-2 lg:col-span-1" : ""}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -238,7 +238,7 @@ export default function DashboardClient({ initialData, initialExchangeRates, tim
               <card.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{card.value}</p>
+              <p className="text-2xl font-bold tabular-nums">{card.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{card.desc}</p>
               {card.trend !== null && (
                 <TrendBadge trend={card.trend} label={card.trendLabel} />
@@ -317,7 +317,7 @@ function ChartsPlaceholder() {
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {[0, 1].map((i) => (
         <Card key={i}>
-          <CardContent className="h-[268px] flex items-center justify-center">
+          <CardContent className="h-[288px] flex items-center justify-center">
             <p className="text-sm text-muted-foreground">图表加载中…</p>
           </CardContent>
         </Card>
@@ -330,7 +330,7 @@ function TrendBadge({ trend, label }: { trend: number | null; label: string }) {
   if (trend === null || !Number.isFinite(trend)) return null;
   const up = trend > 0;
   return (
-    <p className={`text-xs mt-1 flex items-center gap-1 ${up ? "text-red-500" : "text-green-500"}`}>
+    <p className={`text-xs mt-1 flex items-center gap-1 ${up ? "text-red-600 dark:text-red-400" : "text-green-700 dark:text-green-500"}`}>
       {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
       较{label}{up ? "增加" : "减少"} {Math.abs(trend).toFixed(1)}%
     </p>
@@ -356,7 +356,7 @@ function ExpiryRow({
       <div className="flex items-center gap-3 min-w-0">
         <div className="min-w-0">
           <p className="font-medium truncate">{sub.name}</p>
-          <p className={`text-xs ${isExpired ? "text-red-500" : daysLeft <= 3 ? "text-orange-500" : "text-muted-foreground"}`}>
+          <p className={`text-xs ${isExpired ? "text-red-600 dark:text-red-400" : daysLeft <= 3 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground"}`}>
             {isExpired
               ? `已过期 ${Math.abs(daysLeft)} 天`
               : daysLeft === 0

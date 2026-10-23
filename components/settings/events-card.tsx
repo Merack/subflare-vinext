@@ -161,7 +161,7 @@ export default function EventsCard() {
       </CardContent>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col">
+        <DialogContent className="sm:max-w-4xl max-h-[85vh] grid-rows-[auto_minmax(0,1fr)]">
           <DialogHeader>
             <DialogTitle>最近 50 条发送记录</DialogTitle>
             <DialogDescription>
@@ -171,7 +171,7 @@ export default function EventsCard() {
           {records.length === 0 ? (
             <p className="text-sm text-muted-foreground">暂无发送记录</p>
           ) : (
-            <div className="overflow-y-auto min-h-0">
+            <div className="min-h-0 overflow-y-auto">
               <Table>
                 <TableHeader>
                   <TableRow>

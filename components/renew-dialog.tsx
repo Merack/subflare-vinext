@@ -59,7 +59,7 @@ export default function RenewDialog({ target, onClose, onSuccess }: RenewDialogP
 
   return (
     <Dialog open={!!target} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>手动续订 — {target?.name}</DialogTitle>
         </DialogHeader>

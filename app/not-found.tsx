@@ -5,7 +5,7 @@ import { Home, Search } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-dvh flex items-center justify-center bg-background p-4">
       <Card className="max-w-md w-full text-center">
         <CardHeader>
           <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">

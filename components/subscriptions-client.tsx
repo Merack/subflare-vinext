@@ -229,6 +229,7 @@ export default function SubscriptionsClient({ initialSubscriptions, timezone }: 
           {search && (
             <button
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="清除搜索"
               onClick={() => setSearch("")}
             >
               <X className="h-4 w-4" />
@@ -274,7 +275,7 @@ export default function SubscriptionsClient({ initialSubscriptions, timezone }: 
       </div>
 
       <>
-          <div className="md:hidden space-y-3">
+          <div className="lg:hidden space-y-3">
             {filteredSubscriptions.length === 0 ? (
               <div className="text-center text-muted-foreground py-8 border rounded-lg bg-card">
                 {subscriptions.length === 0 ? "暂无订阅，点击右上角新增" : "没有匹配的订阅"}
@@ -308,18 +309,18 @@ export default function SubscriptionsClient({ initialSubscriptions, timezone }: 
                       <div className="space-y-0.5">
                         <p className="text-sm">{formatCalendarDate(sub.expireDate)}</p>
                         {!isDisabled && (
-                          <p className={`text-xs ${isExpired ? "text-destructive font-medium" : isUrgent ? "text-yellow-600 font-medium" : "text-muted-foreground"}`}>
+                          <p className={`text-xs ${isExpired ? "text-destructive font-medium" : isUrgent ? "text-yellow-700 dark:text-yellow-500 font-medium" : "text-muted-foreground"}`}>
                             {isExpired ? `已过期 ${Math.abs(daysLeft)} 天` : daysLeft === 0 ? "今天到期" : `${daysLeft} 天后到期`}
                           </p>
                         )}
                       </div>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenRenew(sub)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="续订" onClick={() => handleOpenRenew(sub)}>
                           <RefreshCw className="h-4 w-4" />
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="操作">
                               <SlidersHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -349,7 +350,7 @@ export default function SubscriptionsClient({ initialSubscriptions, timezone }: 
             )}
           </div>
 
-          <div className="hidden md:block border rounded-lg overflow-hidden bg-card">
+          <div className="hidden lg:block border rounded-lg overflow-hidden bg-card">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -386,8 +387,8 @@ export default function SubscriptionsClient({ initialSubscriptions, timezone }: 
                           <div>
                             <p>{formatCalendarDate(sub.expireDate)}</p>
                             {!isDisabled && (
-                              <p className={`text-xs ${isExpired ? "text-destructive" : isUrgent ? "text-yellow-600" : "text-muted-foreground"}`}>
-                                {isExpired ? `已过期 ${Math.abs(daysLeft)} 天` : `${daysLeft} 天后`}
+                              <p className={`text-xs ${isExpired ? "text-destructive" : isUrgent ? "text-yellow-700 dark:text-yellow-500" : "text-muted-foreground"}`}>
+                                {isExpired ? `已过期 ${Math.abs(daysLeft)} 天` : daysLeft === 0 ? "今天到期" : `${daysLeft} 天后`}
                               </p>
                             )}
                           </div>
@@ -429,6 +430,7 @@ export default function SubscriptionsClient({ initialSubscriptions, timezone }: 
                             <Button
                               variant="ghost"
                               size="icon"
+                              aria-label="编辑"
                               onClick={() => { setEditTarget(sub); setFormOpen(true); }}
                             >
                               <Pencil className="h-4 w-4" />
@@ -436,6 +438,7 @@ export default function SubscriptionsClient({ initialSubscriptions, timezone }: 
                             <Button
                               variant="ghost"
                               size="icon"
+                              aria-label="删除"
                               onClick={() => setDeleteTarget(sub)}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
@@ -483,7 +486,7 @@ export default function SubscriptionsClient({ initialSubscriptions, timezone }: 
       />
 
       <Dialog open={!!historyTarget} onOpenChange={(open) => !open && setHistoryTarget(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>订阅历史 — {historyTarget?.name}</DialogTitle>
           </DialogHeader>
