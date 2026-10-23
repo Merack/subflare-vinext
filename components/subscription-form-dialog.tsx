@@ -374,7 +374,7 @@ export default function SubscriptionFormDialog({
                     <FormControl>
                       <Input type="date" {...field} value={field.value ?? ""} />
                     </FormControl>
-                    {billingCycle !== "once" && startDate && (
+                    {!isEdit && billingCycle !== "once" && startDate && (
                       <FormDescription>已根据开始日期自动计算</FormDescription>
                     )}
                     <FormMessage />
