@@ -3,13 +3,14 @@ import { and, eq } from "drizzle-orm";
 import { notificationChannels, notificationEvents } from "@/db/schema";
 import type * as schema from "@/db/schema";
 import { registry } from "./registry";
+import type { NotificationPayload } from "./types";
 
 type DB = DrizzleD1Database<typeof schema>;
 
 export async function dispatchNotification(
   db: DB,
   subscriptionId: number,
-  message: string,
+  payload: NotificationPayload,
   triggerDate: Date,
   triggerLocalDateKey: string,
   triggerHour: number,
@@ -58,7 +59,7 @@ export async function dispatchNotification(
       if (!strategy) return;
 
       const config = JSON.parse(channel.config) as Record<string, unknown>;
-      const result = await strategy.send(message, config);
+      const result = await strategy.send(payload, config);
 
       await db.insert(notificationEvents).values({
         subscriptionId,
@@ -68,7 +69,7 @@ export async function dispatchNotification(
         triggerHour,
         offsetDays,
         status: result.success ? "sent" : "failed",
-        message,
+        message: payload.text,
         providerMessageId: result.providerMessageId,
         error: result.error,
         sentAt: result.success ? new Date() : null,

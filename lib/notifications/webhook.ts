@@ -1,4 +1,4 @@
-import type { NotificationStrategy, SendResult } from "./types";
+import type { NotificationPayload, NotificationStrategy, SendResult } from "./types";
 
 const WEBHOOK_METHODS = ["post", "get", "put"] as const;
 type WebhookMethod = (typeof WEBHOOK_METHODS)[number];
@@ -96,7 +96,7 @@ export class WebhookStrategy implements NotificationStrategy {
     return validateWebhookConfig(config);
   }
 
-  async send(message: string, config: Record<string, unknown>): Promise<SendResult> {
+  async send(payload: NotificationPayload, config: Record<string, unknown>): Promise<SendResult> {
     if (!validateWebhookConfig(config)) {
       return { success: false, error: "Webhook 配置不完整或格式错误" };
     }
@@ -121,7 +121,7 @@ export class WebhookStrategy implements NotificationStrategy {
     };
 
     if (method !== "get") {
-      init.body = JSON.stringify({ text: message });
+      init.body = JSON.stringify({ text: payload.text });
     }
 
     try {

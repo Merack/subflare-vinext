@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarClock, AlertTriangle, CheckCircle2, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -78,10 +78,13 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
       });
   }, []);
 
-  useEffect(() => {
+  // 服务端重新拉取后（router.refresh）同步到本地状态；用渲染期条件更新代替 effect
+  const [syncedInitial, setSyncedInitial] = useState(initialData);
+  if (syncedInitial !== initialData) {
+    setSyncedInitial(initialData);
     setData(initialData);
     setExchangeRates(initialExchangeRates);
-  }, [initialData, initialExchangeRates]);
+  }
 
 
   const convertItems = useCallback(
@@ -312,6 +315,7 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
       </Card>
 
       <RenewDialog
+        key={renewTarget?.id ?? "closed"}
         target={renewTarget}
         onClose={() => setRenewTarget(null)}
         onSuccess={handleRenewSuccess}

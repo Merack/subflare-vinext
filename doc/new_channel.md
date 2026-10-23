@@ -31,7 +31,7 @@ export const CHANNEL_TYPES = ["telegram", "webhook"] as const;
 参考 `src/lib/notifications/telegram.ts` 新建 `src/lib/notifications/webhook.ts`：
 
 ```ts
-import type { NotificationStrategy, SendResult } from "./types";
+import type { NotificationPayload, NotificationStrategy, SendResult } from "./types";
 
 export class WebhookStrategy implements NotificationStrategy {
   readonly type = "webhook";
@@ -40,7 +40,7 @@ export class WebhookStrategy implements NotificationStrategy {
     return typeof config.url === "string" && config.url.length > 0;
   }
 
-  async send(message: string, config: Record<string, unknown>): Promise<SendResult> {
+  async send(payload: NotificationPayload, config: Record<string, unknown>): Promise<SendResult> {
     const url = config.url as string | undefined;
     if (!url) {
       return { success: false, error: "Webhook URL not configured" };
@@ -49,7 +49,7 @@ export class WebhookStrategy implements NotificationStrategy {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: message }),
+      body: JSON.stringify({ text: payload.text }),
     });
 
     return res.ok
@@ -110,3 +110,13 @@ export const channelDescriptors = {
 - 设置页会自动出现新的渠道类型
 - 创建、编辑、测试渠道的接口会继续复用现有逻辑
 - `dispatcher.ts` 会在定时发送时按 `channel.type` 自动找到对应策略
+
+## 消息载荷
+
+`send` 的入参是 `NotificationPayload`，由 `lib/notifications/message.ts` 统一构建：
+
+- `payload.title`：标题，可用作邮件主题或推送标题
+- `payload.text`：纯文本多行版本（不含任何标签），用于不解析 HTML 的渠道
+- `payload.html`：HTML 版本（用户输入已转义），用于 Telegram 或邮件 html 段
+
+渠道按自身能力取用，例如邮件同时传 `text` 与 `html`，企业微信/Bark/NotifyX 只用 `text`

@@ -1,4 +1,4 @@
-import type { NotificationStrategy, SendResult } from "./types";
+import type { NotificationPayload, NotificationStrategy, SendResult } from "./types";
 
 interface NotifyXConfig {
   apiKey: string;
@@ -41,7 +41,7 @@ export class NotifyXStrategy implements NotificationStrategy {
     return validateNotifyXConfig(config);
   }
 
-  async send(message: string, config: Record<string, unknown>): Promise<SendResult> {
+  async send(payload: NotificationPayload, config: Record<string, unknown>): Promise<SendResult> {
     if (!validateNotifyXConfig(config)) {
       return { success: false, error: "NotifyX 配置不完整或格式错误" };
     }
@@ -54,8 +54,8 @@ export class NotifyXStrategy implements NotificationStrategy {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: "Subflare 通知",
-          content: message,
+          title: payload.title,
+          content: payload.text,
         }),
       });
 

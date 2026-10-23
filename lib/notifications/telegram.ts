@@ -1,4 +1,4 @@
-import type { NotificationStrategy, SendResult } from "./types";
+import type { NotificationPayload, NotificationStrategy, SendResult } from "./types";
 
 interface TelegramConfig {
   chatId: string;
@@ -22,7 +22,7 @@ export class TelegramStrategy implements NotificationStrategy {
   }
 
   async send(
-    message: string,
+    payload: NotificationPayload,
     config: Record<string, unknown>
   ): Promise<SendResult> {
     const cfg = config as unknown as TelegramConfig;
@@ -38,7 +38,7 @@ export class TelegramStrategy implements NotificationStrategy {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: cfg.chatId,
-          text: message,
+          text: payload.htmlInline,
           parse_mode: "HTML",
         }),
       });

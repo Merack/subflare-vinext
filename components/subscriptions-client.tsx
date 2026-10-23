@@ -469,6 +469,7 @@ export default function SubscriptionsClient({ initialSubscriptions }: Subscripti
       </AlertDialog>
 
       <RenewDialog
+        key={renewTarget?.id ?? "closed"}
         target={renewTarget}
         onClose={() => setRenewTarget(null)}
         onSuccess={handleRenewSuccess}

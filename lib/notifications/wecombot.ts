@@ -1,4 +1,4 @@
-import type { NotificationStrategy, SendResult } from "./types";
+import type { NotificationPayload, NotificationStrategy, SendResult } from "./types";
 
 interface WecomBotConfig {
   webhookUrl: string;
@@ -63,7 +63,7 @@ export class WecomBotStrategy implements NotificationStrategy {
     return validateWecomBotConfig(config);
   }
 
-  async send(message: string, config: Record<string, unknown>): Promise<SendResult> {
+  async send(payload: NotificationPayload, config: Record<string, unknown>): Promise<SendResult> {
     if (!validateWecomBotConfig(config)) {
       return { success: false, error: "企业微信机器人配置不完整或格式错误" };
     }
@@ -77,7 +77,7 @@ export class WecomBotStrategy implements NotificationStrategy {
         body: JSON.stringify({
           msgtype: "text",
           text: {
-            content: message,
+            content: payload.text,
           },
         }),
       });

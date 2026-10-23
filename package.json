@@ -9,6 +9,7 @@
     "build:next": "next build",
     "start": "next start",
     "lint": "eslint",
+    "check:notify": "node --experimental-strip-types scripts/check-notification-message.ts",
     "dev:vinext": "vite dev --port 3001",
     "deploy:vinext": "vinext deploy",
     "db:migrations:apply": "wrangler d1 migrations apply DB --remote",

@@ -4,6 +4,7 @@ import { notificationChannels } from "@/db/schema";
 import { requireApiAuth } from "@/lib/session";
 import { and, eq } from "drizzle-orm";
 import { registry } from "@/lib/notifications/registry";
+import { buildTestNotification } from "@/lib/notifications/message";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -37,10 +38,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: "渠道配置不完整或格式错误" }, { status: 400 });
   }
 
-  const result = await strategy.send(
-    "✅ Subflare 测试消息：通知渠道配置正确！",
-    config
-  );
+  const result = await strategy.send(buildTestNotification(), config);
 
   if (!result.success) {
     return NextResponse.json({ error: result.error ?? "发送失败，请检查配置" }, { status: 400 });

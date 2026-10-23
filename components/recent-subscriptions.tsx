@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Subscription } from "@/db/schema";
+import { getDaysLeft } from "@/lib/subscription-utils";
 
 interface RecentSubscriptionsProps {
   subscriptions: Subscription[];
@@ -23,9 +24,7 @@ export default function RecentSubscriptions({ subscriptions }: RecentSubscriptio
         ) : (
           <div className="space-y-3">
             {subscriptions.map((sub) => {
-              const daysLeft = Math.ceil(
-                (new Date(sub.expireDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-              );
+              const daysLeft = getDaysLeft(sub.expireDate);
               const isExpired = daysLeft < 0;
               const isUrgent = daysLeft >= 0 && daysLeft <= 7;
 

@@ -1,4 +1,4 @@
-import type { NotificationStrategy, SendResult } from "./types";
+import type { NotificationPayload, NotificationStrategy, SendResult } from "./types";
 
 interface BarkConfig {
   serverUrl: string;
@@ -68,7 +68,7 @@ export class BarkStrategy implements NotificationStrategy {
     return validateBarkConfig(config);
   }
 
-  async send(message: string, config: Record<string, unknown>): Promise<SendResult> {
+  async send(payload: NotificationPayload, config: Record<string, unknown>): Promise<SendResult> {
     if (!validateBarkConfig(config)) {
       return { success: false, error: "Bark 配置不完整或格式错误" };
     }
@@ -81,7 +81,7 @@ export class BarkStrategy implements NotificationStrategy {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          body: message,
+          body: payload.text,
         }),
       });
 
