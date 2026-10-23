@@ -4,9 +4,20 @@ export interface SendResult {
   error?: string;
 }
 
+/**
+ * 统一的通知消息载荷
+ *
+ * text 为纯文本（不含任何标签），html 为可渲染版本，title 可用作邮件主题或推送标题
+ */
+export interface NotificationPayload {
+  title: string;
+  text: string;
+  html: string;
+}
+
 export interface NotificationStrategy {
   readonly type: string;
-  send(message: string, config: Record<string, unknown>): Promise<SendResult>;
+  send(payload: NotificationPayload, config: Record<string, unknown>): Promise<SendResult>;
   validateConfig(config: Record<string, unknown>): boolean;
 }
 

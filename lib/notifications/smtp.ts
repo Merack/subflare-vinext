@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
-import type { NotificationStrategy, SendResult } from "./types";
+import type { NotificationPayload, NotificationStrategy, SendResult } from "./types";
 import { getSmtpPort, isValidSmtpSecureMode, validateSmtpConfig } from "./smtp-config";
 
 interface SmtpConfig {
@@ -31,7 +31,7 @@ export class SmtpStrategy implements NotificationStrategy {
     return validateSmtpConfig(config);
   }
 
-  async send(message: string, config: Record<string, unknown>): Promise<SendResult> {
+  async send(payload: NotificationPayload, config: Record<string, unknown>): Promise<SendResult> {
     if (!validateSmtpConfig(config)) {
       return { success: false, error: "SMTP 配置不完整或格式错误" };
     }
@@ -60,8 +60,9 @@ export class SmtpStrategy implements NotificationStrategy {
       const info = await transporter.sendMail({
         from: cfg.from.trim(),
         to: cfg.to.trim(),
-        subject: "Subflare 通知",
-        text: message,
+        subject: payload.title,
+        text: payload.text,
+        html: payload.html,
       });
 
       return {

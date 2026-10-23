@@ -13,6 +13,7 @@
 import { and, eq, lte } from "drizzle-orm";
 import { subscriptions, notificationChannels, subscriptionHistory, userSettings } from "@/db/schema";
 import { dispatchNotification } from "@/lib/notifications/dispatcher";
+import { buildExpiryNotification } from "@/lib/notifications/message";
 import { advanceExpireDate } from "@/lib/subscription-utils";
 import { SINGLE_USER_ID } from "@/lib/session";
 import { getDb } from "@/db";
@@ -175,18 +176,14 @@ export async function runCron(): Promise<{ sent: number; skipped?: boolean }> {
 
     if (!shouldNotify) continue;
 
-    // 构建通知消息
-    // 当天到期和提前提醒使用不同的消息格式
-    const message =
-      daysLeft === 0
-        ? `⚠️ <b>${sub.name}</b> 今天到期！`
-        : `🔔 <b>${sub.name}</b> 将在 <b>${daysLeft}</b> 天后到期（${expireDate.toLocaleDateString("zh-CN")}）`;
+    // 构建通知消息（纯文本 + HTML 两个版本，由渠道各自取用）
+    const payload = buildExpiryNotification(sub, daysLeft, timezone);
 
     // 发送通知
     await dispatchNotification(
       db,
       sub.id,
-      message,
+      payload,
       triggerDate,
       triggerLocalDateKey,
       local.hour,

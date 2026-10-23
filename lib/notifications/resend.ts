@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import type { NotificationStrategy, SendResult } from "./types";
+import type { NotificationPayload, NotificationStrategy, SendResult } from "./types";
 
 interface ResendConfig {
   apiKey: string;
@@ -46,7 +46,7 @@ export class ResendStrategy implements NotificationStrategy {
     return validateResendConfig(config);
   }
 
-  async send(message: string, config: Record<string, unknown>): Promise<SendResult> {
+  async send(payload: NotificationPayload, config: Record<string, unknown>): Promise<SendResult> {
     if (!validateResendConfig(config)) {
       return { success: false, error: "Resend 配置不完整或格式错误" };
     }
@@ -58,8 +58,9 @@ export class ResendStrategy implements NotificationStrategy {
       const { data, error } = await resend.emails.send({
         from: cfg.from.trim(),
         to: cfg.to.trim(),
-        subject: "Subflare 通知",
-        text: message,
+        subject: payload.title,
+        text: payload.text,
+        html: payload.html,
       });
 
       if (error) {

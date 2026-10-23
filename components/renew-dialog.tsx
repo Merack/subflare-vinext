@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,18 +26,11 @@ function calcNextExpireDate(sub: Subscription): string {
 }
 
 export default function RenewDialog({ target, onClose, onSuccess }: RenewDialogProps) {
-  const [renewDate, setRenewDate] = useState("");
-  const [renewCost, setRenewCost] = useState("");
+  // 用 key={target?.id ?? "closed"} 重挂载来重置表单，这里只需按初始 target 初始化一次
+  const [renewDate, setRenewDate] = useState(() => (target ? calcNextExpireDate(target) : ""));
+  const [renewCost, setRenewCost] = useState(() => (target?.cost != null ? String(target.cost) : ""));
   const [renewNotes, setRenewNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (target) {
-      setRenewDate(calcNextExpireDate(target));
-      setRenewCost(target.cost != null ? String(target.cost) : "");
-      setRenewNotes("");
-    }
-  }, [target]);
 
   const handleRenew = async () => {
     if (!target || !renewDate) return;
