@@ -11,6 +11,7 @@ const cleanupSchema = z.object({
 
 export async function GET() {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const db = await getDb();
 
   const items = await db
@@ -36,6 +37,7 @@ export async function GET() {
 
 export async function DELETE(request: NextRequest) {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const db = await getDb();
 
   const body = await request.json() as unknown;

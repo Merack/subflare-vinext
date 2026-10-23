@@ -90,22 +90,34 @@ export function advanceExpireDate(expireDate: Date, billingCycle: BillingCycle, 
 
   switch (billingCycle) {
     case "daily":
-      next.setDate(next.getDate() + count);
+      next.setUTCDate(next.getUTCDate() + count);
       break;
     case "monthly":
-      next.setMonth(next.getMonth() + count);
-      break;
+      return addMonths(next, count);
     case "quarterly":
-      next.setMonth(next.getMonth() + count * 3);
-      break;
+      return addMonths(next, count * 3);
     case "yearly":
-      next.setFullYear(next.getFullYear() + count);
+      next.setUTCFullYear(next.getUTCFullYear() + count);
       break;
     case "once":
       // 一次性付款不推进日期
       break;
   }
 
+  return next;
+}
+
+/**
+ * 按月推进，并把“日”夹到目标月的最后一天
+ * 直接用 setMonth 会溢出: 1-31 加一个月变成 3-03, 8-31 加一个月变成 10-01
+ */
+function addMonths(date: Date, months: number): Date {
+  const next = new Date(date);
+  const day = next.getUTCDate();
+  next.setUTCDate(1);
+  next.setUTCMonth(next.getUTCMonth() + months);
+  const lastDay = new Date(Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0)).getUTCDate();
+  next.setUTCDate(Math.min(day, lastDay));
   return next;
 }
 

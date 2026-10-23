@@ -54,6 +54,7 @@ const renewSchema = z.object({
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   // 验证用户登录状态
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const { id } = await params;
   const db = await getDb();
 
@@ -98,6 +99,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 export async function POST(request: NextRequest, { params }: RouteParams) {
   // 验证用户登录状态
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const { id } = await params;
 
   // 解析并验证请求体

@@ -30,6 +30,7 @@ function getChannelSummary(type: string, configRaw: string) {
 
 export async function GET() {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const db = await getDb();
 
   const channels = await db
@@ -50,6 +51,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const db = await getDb();
 
   const body = await request.json() as unknown;

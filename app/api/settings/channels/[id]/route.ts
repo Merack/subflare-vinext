@@ -19,6 +19,7 @@ const updateSchema = z.object({
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const { id } = await params;
   const db = await getDb();
 
@@ -83,6 +84,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const { id } = await params;
   const db = await getDb();
 

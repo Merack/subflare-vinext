@@ -146,6 +146,9 @@ export default function SubscriptionFormDialog({
       return;
     }
 
+    // 编辑时到期日以库里为准, 不能再用 开始日期+周期 覆盖（会把到期日改回第一个周期）
+    if (isEdit) return;
+
     if (!startDate || typeof billingCycleCount !== "number") {
       return;
     }
@@ -159,7 +162,7 @@ export default function SubscriptionFormDialog({
       shouldDirty: true,
       shouldValidate: true,
     });
-  }, [billingCycle, billingCycleCount, startDate, setValue]);
+  }, [billingCycle, billingCycleCount, isEdit, startDate, setValue]);
 
   useEffect(() => {
     if (!open) return;

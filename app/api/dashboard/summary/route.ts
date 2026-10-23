@@ -31,6 +31,7 @@ import { requireApiAuth } from "@/lib/session";
  */
 export async function GET() {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const [summary, exchangeRates] = await Promise.all([
     getDashboardSummary(session.userId),
     getExchangeRates(),

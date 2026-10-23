@@ -13,6 +13,7 @@ const updateSchema = z.object({
 
 export async function GET() {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const db = await getDb();
 
   const [settings] = await db
@@ -43,6 +44,7 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const db = await getDb();
 
   const body = await request.json() as unknown;
