@@ -4,12 +4,12 @@ import type { CSSProperties } from "react"
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
-import { getInvertedToastTheme } from "@/lib/theme-utils"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { resolvedTheme, systemTheme } = useTheme()
   const activeTheme = (resolvedTheme ?? systemTheme ?? "light") as "light" | "dark"
-  const invertedTheme: ToasterProps["theme"] = getInvertedToastTheme(activeTheme)
+  // 提示条用反色，才能从页面背景里跳出来
+  const invertedTheme: ToasterProps["theme"] = activeTheme === "dark" ? "light" : "dark"
 
   return (
     <Sonner

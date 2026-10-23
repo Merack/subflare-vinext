@@ -1,27 +1,26 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, lazy, Suspense } from "react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarClock, AlertTriangle, CheckCircle2, DollarSign, TrendingUp, TrendingDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
 import type { DashboardSummary, DashboardSummaryResponse } from "@/lib/dashboard";
 import type { Subscription } from "@/db/schema";
+import {
+  CATEGORY_LABELS,
+  STATUS_LABELS,
+  formatCalendarDate,
+  getDaysLeft,
+  getTodayKey,
+} from "@/lib/subscription-utils";
 import RenewDialog from "./renew-dialog";
+
+// recharts 只在仪表盘用，拆出去按需加载，别拖慢首屏
+const DashboardCharts = lazy(() => import("./dashboard-charts"));
 
 interface CostItems {
   cost: number;
@@ -36,30 +35,14 @@ interface CategoryCostGroup {
 interface DashboardClientProps {
   initialData: DashboardSummary;
   initialExchangeRates: Record<string, number> | null;
+  timezone: string;
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   CNY: "¥", USD: "$", EUR: "€", JPY: "¥", HKD: "HK$", GBP: "£",
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  domain: "域名", server: "服务器", streaming: "流媒体",
-  software: "软件", saas: "SaaS", tool: "工具", other: "其他",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  active: "#22c55e", paused: "#f59e0b", disabled: "#6b7280", expired: "#ef4444",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  active: "正常", paused: "暂停", disabled: "已停用", expired: "已过期",
-};
-
-const CATEGORY_COLORS = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#f43f5e", "#f97316", "#eab308", "#22c55e",
-];
-
-export default function DashboardClient({ initialData, initialExchangeRates }: DashboardClientProps) {
+export default function DashboardClient({ initialData, initialExchangeRates, timezone }: DashboardClientProps) {
   const [data, setData] = useState<DashboardSummary>(initialData);
   const [targetCurrency, setTargetCurrency] = useState("CNY");
   const [exchangeRates, setExchangeRates] = useState<Record<string, number> | null>(initialExchangeRates);
@@ -70,12 +53,16 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
 
   const fetchData = useCallback(() => {
     void fetch("/api/dashboard/summary")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
       .then((d) => {
         const response = d as DashboardSummaryResponse;
         setData(response.summary);
         setExchangeRates(response.exchangeRates);
-      });
+      })
+      .catch(() => toast.error("刷新数据失败"));
   }, []);
 
   // 服务端重新拉取后（router.refresh）同步到本地状态；用渲染期条件更新代替 effect
@@ -86,6 +73,7 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
     setExchangeRates(initialExchangeRates);
   }
 
+  const todayKey = getTodayKey(timezone);
 
   const convertItems = useCallback(
     (items: CostItems[]) => {
@@ -135,41 +123,26 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
   // Chart data
   const statusChartData = Object.entries(data.statusCounts)
     .filter(([, v]) => v > 0)
-    .map(([k, v]) => ({ name: STATUS_LABELS[k] ?? k, value: v, key: k }));
+    .map(([k, v]) => ({ name: STATUS_LABELS[k as keyof typeof STATUS_LABELS] ?? k, value: v, key: k }));
 
   const categoryChartData = convertCategoryGroups(
     period === "month" ? data.categoryMonthlyCosts : data.categoryYearlyCosts
   ).filter((d) => d.value > 0);
 
-  const expiringSoonList = data.expiringSoonList;
-  const expiredList = data.expiredList;
-
-  // Filter expiring soon by period
-  const now = new Date();
-  const cutoff = period === "month"
-    ? new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-    : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const filteredExpiringSoon = expiringSoonList.filter(
-    (s) => new Date(s.expireDate) <= cutoff
+  // 服务端只给 30 天内的列表，这里再按月/年视角收窄
+  const cutoffDays = period === "month" ? 7 : 30;
+  const filteredExpiringSoon = data.expiringSoonList.filter(
+    (s) => getDaysLeft(s.expireDate, todayKey) <= cutoffDays
   );
+
+  const expiredList = data.expiredList;
 
   const handleOpenRenew = (sub: Subscription) => {
     setRenewTarget(sub);
   };
 
   const handleRenewSuccess = () => {
-    void fetchData();
-  };
-
-  const TrendBadge = ({ trend, label }: { trend: number | null; label: string }) => {
-    if (trend === null) return null;
-    const up = trend > 0;
-    return (
-      <p className={`text-xs mt-1 flex items-center gap-1 ${up ? "text-red-500" : "text-green-500"}`}>
-        {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-        较{label}{up ? "增加" : "减少"} {Math.abs(trend).toFixed(1)}%
-      </p>
-    );
+    fetchData();
   };
 
   const cards = [
@@ -177,7 +150,7 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
       title: "订阅总数",
       value: data.total ?? "-",
       icon: CheckCircle2,
-      desc: "全部有效订阅",
+      desc: "全部订阅（含停用/过期）",
       trend: null,
       trendLabel: "",
     },
@@ -248,6 +221,12 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
         </div>
       </div>
 
+      {!exchangeRates && (
+        <p className="text-xs text-muted-foreground">
+          汇率暂时不可用，金额无法换算显示（配置不会丢，稍后刷新即可）
+        </p>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {cards.map((card, i) => (
@@ -269,7 +248,7 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
         ))}
       </div>
 
-            {/* Expiry Lists */}
+      {/* Expiry Lists */}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm font-medium">到期订阅</CardTitle>
@@ -293,7 +272,7 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
               ) : (
                 <div className="space-y-2">
                   {filteredExpiringSoon.map((sub) => (
-                    <ExpiryRow key={sub.id} sub={sub} sym={sym} onRenew={handleOpenRenew} />
+                    <ExpiryRow key={sub.id} sub={sub} sym={sym} todayKey={todayKey} onRenew={handleOpenRenew} />
                   ))}
                 </div>
               )}
@@ -305,7 +284,7 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
               ) : (
                 <div className="space-y-2">
                   {expiredList.map((sub) => (
-                    <ExpiryRow key={sub.id} sub={sub} sym={sym} onRenew={handleOpenRenew} />
+                    <ExpiryRow key={sub.id} sub={sub} sym={sym} todayKey={todayKey} onRenew={handleOpenRenew} />
                   ))}
                 </div>
               )}
@@ -321,94 +300,55 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
         onSuccess={handleRenewSuccess}
       />
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Status Pie Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">订阅状态占比</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {statusChartData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">暂无数据</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie
-                    data={statusChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {statusChartData.map((entry) => (
-                      <Cell key={entry.key} fill={STATUS_COLORS[entry.key] ?? "#6b7280"} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v, name) => [`${v} 个`, name]} />
-                  <Legend
-                    formatter={(value, entry) => {
-                      const payload = entry.payload as { value: number } | undefined;
-                      return `${value} (${payload?.value ?? 0})`;
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Category Cost Bar Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">
-              各类型支出占比（{period === "month" ? "本月" : "本年"}）
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {categoryChartData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">暂无数据</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart
-                  data={categoryChartData}
-                  layout="vertical"
-                  margin={{ left: 8, right: 32, top: 4, bottom: 4 }}
-                >
-                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${sym}${v.toFixed(0)}`} />
-                  <YAxis type="category" dataKey="category" tick={{ fontSize: 11 }} width={52} />
-                  <Tooltip formatter={(value) => [typeof value === "number" ? `${sym}${value.toFixed(2)}` : `${sym}${value ?? ""}`, "支出"]} />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                    {categoryChartData.map((_, i) => (
-                      <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-
+      <Suspense fallback={<ChartsPlaceholder />}>
+        <DashboardCharts
+          statusData={statusChartData}
+          categoryData={categoryChartData}
+          sym={sym}
+          period={period}
+        />
+      </Suspense>
     </div>
+  );
+}
+
+function ChartsPlaceholder() {
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {[0, 1].map((i) => (
+        <Card key={i}>
+          <CardContent className="h-[268px] flex items-center justify-center">
+            <p className="text-sm text-muted-foreground">图表加载中…</p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function TrendBadge({ trend, label }: { trend: number | null; label: string }) {
+  if (trend === null || !Number.isFinite(trend)) return null;
+  const up = trend > 0;
+  return (
+    <p className={`text-xs mt-1 flex items-center gap-1 ${up ? "text-red-500" : "text-green-500"}`}>
+      {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+      较{label}{up ? "增加" : "减少"} {Math.abs(trend).toFixed(1)}%
+    </p>
   );
 }
 
 function ExpiryRow({
   sub,
   sym,
+  todayKey,
   onRenew,
 }: {
   sub: Subscription;
   sym: string;
+  todayKey: string;
   onRenew: (sub: Subscription) => void;
 }) {
-  const expire = new Date(sub.expireDate);
-  const now = new Date();
-  const daysLeft = Math.ceil((expire.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const daysLeft = getDaysLeft(sub.expireDate, todayKey);
   const isExpired = daysLeft < 0;
 
   return (
@@ -423,7 +363,7 @@ function ExpiryRow({
               ? "今天到期"
               : `${daysLeft} 天后到期`}
             {" · "}
-            {expire.toLocaleDateString("zh-CN")}
+            {formatCalendarDate(sub.expireDate)}
           </p>
         </div>
       </div>

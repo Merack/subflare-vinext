@@ -45,17 +45,20 @@ import RenewDialog from "./renew-dialog";
 import {
   CATEGORY_LABELS,
   STATUS_LABELS,
+  formatCalendarDate,
   getCycleLabel,
   getEffectiveStatus,
   getStatusBadgeVariant,
   getStatusLabel,
+  getTodayKey,
 } from "@/lib/subscription-utils";
 
 interface SubscriptionsClientProps {
   initialSubscriptions: Subscription[];
+  timezone: string;
 }
 
-export default function SubscriptionsClient({ initialSubscriptions }: SubscriptionsClientProps) {
+export default function SubscriptionsClient({ initialSubscriptions, timezone }: SubscriptionsClientProps) {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>(initialSubscriptions);
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Subscription | null>(null);
@@ -67,6 +70,8 @@ export default function SubscriptionsClient({ initialSubscriptions }: Subscripti
   const [search, setSearch] = useState("");
   const [filterCategories, setFilterCategories] = useState<Set<string>>(new Set());
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
+
+  const todayKey = getTodayKey(timezone);
 
   const upsertSubscription = (subscription: Subscription) => {
     setSubscriptions((prev) => {
@@ -123,9 +128,11 @@ export default function SubscriptionsClient({ initialSubscriptions }: Subscripti
 
   const handleOpenHistory = async (sub: Subscription) => {
     setHistoryTarget(sub);
+    setHistory([]);
     setHistoryLoading(true);
     try {
       const res = await fetch(`/api/subscriptions/${sub.id}/history`);
+      if (!res.ok) throw new Error();
       const data = await res.json() as SubscriptionHistoryRecord[];
       setHistory(data);
     } catch {
@@ -157,12 +164,12 @@ export default function SubscriptionsClient({ initialSubscriptions }: Subscripti
       }
       if (filterCategories.size > 0 && !filterCategories.has(sub.category)) return false;
       if (filterStatuses.size > 0) {
-        const { effectiveStatus } = getEffectiveStatus(sub);
+        const { effectiveStatus } = getEffectiveStatus(sub, todayKey);
         if (!filterStatuses.has(effectiveStatus)) return false;
       }
       return true;
     });
-  }, [subscriptions, search, filterCategories, filterStatuses]);
+  }, [subscriptions, search, filterCategories, filterStatuses, todayKey]);
 
   const allCategories = useMemo(() => {
     const cats = new Set(subscriptions.map((s) => s.category));
@@ -274,7 +281,7 @@ export default function SubscriptionsClient({ initialSubscriptions }: Subscripti
               </div>
             ) : (
               filteredSubscriptions.map((sub) => {
-                const { daysLeft, isExpired, isUrgent, isDisabled } = getEffectiveStatus(sub);
+                const { daysLeft, isExpired, isUrgent, isDisabled } = getEffectiveStatus(sub, todayKey);
                 const cycleLabel = getCycleLabel(sub);
 
                 return (
@@ -299,7 +306,7 @@ export default function SubscriptionsClient({ initialSubscriptions }: Subscripti
 
                     <div className="flex justify-between items-end">
                       <div className="space-y-0.5">
-                        <p className="text-sm">{new Date(sub.expireDate).toLocaleDateString("zh-CN")}</p>
+                        <p className="text-sm">{formatCalendarDate(sub.expireDate)}</p>
                         {!isDisabled && (
                           <p className={`text-xs ${isExpired ? "text-destructive font-medium" : isUrgent ? "text-yellow-600 font-medium" : "text-muted-foreground"}`}>
                             {isExpired ? `已过期 ${Math.abs(daysLeft)} 天` : daysLeft === 0 ? "今天到期" : `${daysLeft} 天后到期`}
@@ -363,7 +370,7 @@ export default function SubscriptionsClient({ initialSubscriptions }: Subscripti
                   </TableRow>
                 ) : (
                   filteredSubscriptions.map((sub) => {
-                    const { daysLeft, isExpired, isUrgent, isDisabled } = getEffectiveStatus(sub);
+                    const { daysLeft, isExpired, isUrgent, isDisabled } = getEffectiveStatus(sub, todayKey);
                     const cycleLabel = getCycleLabel(sub);
 
                     return (
@@ -377,7 +384,7 @@ export default function SubscriptionsClient({ initialSubscriptions }: Subscripti
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p>{new Date(sub.expireDate).toLocaleDateString("zh-CN")}</p>
+                            <p>{formatCalendarDate(sub.expireDate)}</p>
                             {!isDisabled && (
                               <p className={`text-xs ${isExpired ? "text-destructive" : isUrgent ? "text-yellow-600" : "text-muted-foreground"}`}>
                                 {isExpired ? `已过期 ${Math.abs(daysLeft)} 天` : `${daysLeft} 天后`}
@@ -492,7 +499,7 @@ export default function SubscriptionsClient({ initialSubscriptions }: Subscripti
                     <Badge variant="outline">{item.renewalType === "manual" ? "手动续订" : "自动续订"}</Badge>
                     <span className="text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString("zh-CN")}</span>
                   </div>
-                  <p>到期日：{new Date(item.previousExpireDate).toLocaleDateString("zh-CN")} → {new Date(item.newExpireDate).toLocaleDateString("zh-CN")}</p>
+                  <p>到期日：{formatCalendarDate(item.previousExpireDate)} → {formatCalendarDate(item.newExpireDate)}</p>
                   {item.cost != null && <p>费用：{item.cost}</p>}
                   {item.notes && <p className="text-muted-foreground">备注：{item.notes}</p>}
                 </div>

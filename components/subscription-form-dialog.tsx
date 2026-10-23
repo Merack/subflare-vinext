@@ -23,14 +23,24 @@ import {
 import type { Subscription } from "@/db/schema";
 import { BILLING_CYCLES, REMINDER_MODES, SUBSCRIPTION_STATUSES } from "@/db/schema";
 import { normalizeAutoRenew } from "@/lib/subscription-billing";
-import { calcExpireDateFromStartDate, toDateInput } from "@/lib/subscription-utils";
+import {
+  CATEGORY_OPTIONS,
+  STATUS_OPTIONS,
+  calcExpireDateFromStartDate,
+  toDateInput,
+} from "@/lib/subscription-utils";
+import { getApiErrorMessage } from "@/lib/utils";
 
 const formSchema = z.object({
   name: z.string().min(1, "请输入名称"),
   category: z.string().min(1, "请选择或输入分类"),
   url: z.string().optional(),
   notes: z.string().optional(),
-  cost: z.number().nonnegative().optional(),
+  // 费用存字符串：一边输一边 Number() 会把小数点吃掉（9.99 变成 99），提交时再转数字
+  cost: z.string().refine(
+    (value) => value.trim() === "" || (Number.isFinite(Number(value)) && Number(value) >= 0),
+    "请输入非负数字",
+  ),
   currency: z.string().min(1),
   billingCycle: z.enum(BILLING_CYCLES),
   billingCycleCount: z.union([z.literal(""), z.number().int().min(1)]),
@@ -64,7 +74,7 @@ const createDefaultValues: FormInput = {
   category: "other",
   url: "",
   notes: "",
-  cost: undefined,
+  cost: "",
   currency: "CNY",
   billingCycle: "yearly",
   billingCycleCount: 1,
@@ -82,23 +92,6 @@ interface SubscriptionFormDialogProps {
   subscription: Subscription | null;
   onSuccess: (subscription: Subscription) => void;
 }
-
-const PRESET_CATEGORIES = [
-  { value: "domain", label: "域名" },
-  { value: "server", label: "服务器" },
-  { value: "streaming", label: "流媒体" },
-  { value: "software", label: "软件" },
-  { value: "saas", label: "SaaS" },
-  { value: "tool", label: "工具" },
-  { value: "other", label: "其他" },
-] as const;
-
-const STATUS_OPTIONS = [
-  { value: "active", label: "正常" },
-  { value: "paused", label: "暂停" },
-  { value: "disabled", label: "已停用" },
-  { value: "expired", label: "已过期" },
-] as const;
 
 const CURRENCY_OPTIONS = ["CNY", "USD", "EUR", "HKD"] as const;
 
@@ -169,13 +162,13 @@ export default function SubscriptionFormDialog({
 
     if (subscription) {
       const cat = subscription.category;
-      setCategoryInput(PRESET_CATEGORIES.find((item) => item.value === cat) ? "" : cat);
+      setCategoryInput(CATEGORY_OPTIONS.find((item) => item.value === cat) ? "" : cat);
       reset({
         name: subscription.name,
         category: cat,
         url: subscription.url ?? "",
         notes: subscription.notes ?? "",
-        cost: subscription.cost ?? undefined,
+        cost: subscription.cost != null ? String(subscription.cost) : "",
         currency: subscription.currency,
         billingCycle: subscription.billingCycle,
         billingCycleCount: subscription.billingCycleCount,
@@ -201,7 +194,7 @@ export default function SubscriptionFormDialog({
       const payload = {
         ...data,
         autoRenew: normalizeAutoRenew(data),
-        cost: data.cost ?? null,
+        cost: data.cost.trim() === "" ? null : Number(data.cost),
         reminderDays: Number(data.reminderDays),
       };
 
@@ -212,8 +205,8 @@ export default function SubscriptionFormDialog({
       });
 
       if (!res.ok) {
-        const err = await res.json() as { error: string };
-        toast.error(typeof err.error === "string" ? err.error : "操作失败");
+        const body = await res.json().catch(() => null) as { error?: unknown } | null;
+        toast.error(getApiErrorMessage(body?.error, "操作失败"));
         return;
       }
 
@@ -273,7 +266,7 @@ export default function SubscriptionFormDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {PRESET_CATEGORIES.map((item) => (
+                        {CATEGORY_OPTIONS.map((item) => (
                           <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
                         ))}
                         <SelectItem value="__custom__">自定义...</SelectItem>
@@ -415,11 +408,11 @@ export default function SubscriptionFormDialog({
                     <FormLabel>费用</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
+                        type="text"
+                        inputMode="decimal"
                         placeholder="0.00"
-                        value={field.value ?? ""}
-                        onChange={(event) => field.onChange(event.target.value === "" ? undefined : Number(event.target.value))}
+                        value={field.value}
+                        onChange={(event) => field.onChange(event.target.value)}
                       />
                     </FormControl>
                     <FormMessage />

@@ -65,16 +65,16 @@ export default function RenewDialog({ target, onClose, onSuccess }: RenewDialogP
         </DialogHeader>
         <div className="space-y-3 pt-2">
           <div className="space-y-1">
-            <Label>新到期日期 *</Label>
-            <Input type="date" value={renewDate} onChange={(e) => setRenewDate(e.target.value)} />
+            <Label htmlFor="renew-expire-date">新到期日期 *</Label>
+            <Input id="renew-expire-date" type="date" value={renewDate} onChange={(e) => setRenewDate(e.target.value)} />
           </div>
           <div className="space-y-1">
-            <Label>续订费用</Label>
-            <Input type="number" min={0} step={0.01} value={renewCost} onChange={(e) => setRenewCost(e.target.value)} placeholder={target?.currency ?? "可选"} />
+            <Label htmlFor="renew-cost">续订费用</Label>
+            <Input id="renew-cost" type="number" min={0} step={0.01} value={renewCost} onChange={(e) => setRenewCost(e.target.value)} placeholder={target?.currency ?? "可选"} />
           </div>
           <div className="space-y-1">
-            <Label>备注</Label>
-            <Input value={renewNotes} onChange={(e) => setRenewNotes(e.target.value)} placeholder="可选" />
+            <Label htmlFor="renew-notes">备注</Label>
+            <Input id="renew-notes" value={renewNotes} onChange={(e) => setRenewNotes(e.target.value)} placeholder="可选" />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={onClose}>取消</Button>

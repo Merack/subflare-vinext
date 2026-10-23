@@ -5,6 +5,8 @@ import {
   getDashboardSummary,
 } from "@/lib/dashboard";
 import { requireApiAuth } from "@/lib/session";
+import { getUserTimezone } from "@/lib/user-settings";
+import { getTodayKey } from "@/lib/subscription-utils";
 
 /**
  * GET 处理器 - 获取仪表板摘要数据
@@ -31,8 +33,9 @@ import { requireApiAuth } from "@/lib/session";
 export async function GET() {
   const session = await requireApiAuth();
   if (session instanceof NextResponse) return session;
+  const timezone = await getUserTimezone(session.userId);
   const [summary, exchangeRates] = await Promise.all([
-    getDashboardSummary(session.userId),
+    getDashboardSummary(session.userId, getTodayKey(timezone)),
     getExchangeRates(),
   ]);
 
