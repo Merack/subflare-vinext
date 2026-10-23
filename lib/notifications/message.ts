@@ -26,11 +26,16 @@ function formatDateInTimezone(date: Date, timezone: string): string {
 
 function buildPayload(title: string, lines: string[]): NotificationPayload {
   const text = lines.length > 0 ? `${title}\n\n${lines.join("\n")}` : title;
+  const escapedLines = lines.map((line) => escapeHtml(line));
   const body = lines.length > 0
-    ? `<p><b>${escapeHtml(title)}</b></p><p>${lines.map((line) => escapeHtml(line)).join("<br>")}</p>`
+    ? `<p><b>${escapeHtml(title)}</b></p><p>${escapedLines.join("<br>")}</p>`
     : `<p><b>${escapeHtml(title)}</b></p>`;
+  // Telegram HTML 不支持 <p>/<br>，只用内联标签 + 换行
+  const inline = lines.length > 0
+    ? `<b>${escapeHtml(title)}</b>\n\n${escapedLines.join("\n")}`
+    : `<b>${escapeHtml(title)}</b>`;
 
-  return { title, text, html: body };
+  return { title, text, html: body, htmlInline: inline };
 }
 
 /**

@@ -43,6 +43,9 @@ assert.match(payload.text, /自动续费：已开启/);
 assert.doesNotMatch(payload.text, /<\/?[a-z]+>/i, "纯文本版本不能含标签");
 assert.match(payload.html, /<b>🔔 Netflix 将在 7 天后到期<\/b>/);
 assert.match(payload.html, /<br>/);
+// Telegram 版本：只能有内联标签，不能有 p/br
+assert.doesNotMatch(payload.htmlInline, /<\/?(p|br|div)\b/i, "Telegram HTML 不支持块级标签");
+assert.match(payload.htmlInline, /^<b>🔔 Netflix 将在 7 天后到期<\/b>\n\n到期日：2026-03-25\n/);
 
 // 可省略字段为空时不出现
 assert.doesNotMatch(payload.text, /备注：|链接：/);
@@ -68,6 +71,8 @@ assert.doesNotMatch(expired.text, /金额：/, "cost 为空时不带金额行");
 assert.doesNotMatch(expired.html, /<script>/, "HTML 版本必须转义用户输入");
 assert.match(expired.html, /&lt;script&gt;/);
 assert.match(expired.html, /&amp;c=2/);
+assert.doesNotMatch(expired.htmlInline, /<\/?(p|br|div)\b/i);
+assert.doesNotMatch(expired.htmlInline, /<script>/);
 
 // 测试消息
 const test = buildTestNotification();

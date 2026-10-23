@@ -38,7 +38,7 @@ export class TelegramStrategy implements NotificationStrategy {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: cfg.chatId,
-          text: payload.html,
+          text: payload.htmlInline,
           parse_mode: "HTML",
         }),
       });
