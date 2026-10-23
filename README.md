@@ -198,8 +198,8 @@ pnpm install
 先按sql文件名前缀数字顺序执行 `drizzle/` 目录中的 SQL 文件到本地 D1, 如：
 
 ```bash
-pnpm wrangler d1 execute DB --local --file=drizzle/0000_supreme_mister_fear.sql --env development
-pnpm wrangler d1 execute DB --local --file=drizzle/0001_broken_spyke.sql --env development
+pnpm wrangler d1 execute DB --local --file=drizzle/0000_funny_dracula.sql --env development
+pnpm wrangler d1 execute DB --local --file=drizzle/0001_strong_the_call.sql --env development
 ```
 
 如果后续新增了新的 SQL 文件，也需要继续按文件顺序执行
@@ -254,12 +254,13 @@ pnpm wrangler d1 execute DB --local --file=drizzle/0002_xxx.sql --env developmen
 ### 常用命令
 
 ```bash
-pnpm dev        # 本地开发
-pnpm build      # Next.js 构建
-pnpm preview    # 构建后在本地以 Cloudflare 运行时预览
-pnpm deploy     # 构建并部署到 Cloudflare Workers
-pnpm upload     # 构建并上传
-pnpm cf-typegen # 生成 Cloudflare 环境类型
+pnpm dev                  # 本地开发 (vite + Cloudflare 本地模拟, 默认 http://localhost:5173)
+pnpm build                # 构建产物到 dist/
+pnpm deploy               # 应用远程 D1 迁移 + 构建并部署到 Cloudflare Workers
+pnpm db:migrations:apply  # 只应用远程 D1 迁移
+pnpm lint                 # ESLint
+pnpm check:notify         # 通知消息拼装自检
+pnpm check:dates          # 订阅周期日期计算自检
 ```
 
 ### 新增通知渠道

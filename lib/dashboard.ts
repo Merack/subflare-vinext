@@ -39,8 +39,6 @@ export interface DashboardSummary {
   total: number;
   /** 已过期订阅数 */
   expired: number;
-  /** 即将过期订阅数 */
-  expiringSoon: number;
   /** 本月预期费用项 (按过期日期统计) */
   monthlyExpectedCostItems: CostItems[];
   /** 本月实际费用项 (按开始日期统计) */
@@ -96,8 +94,6 @@ export async function getDashboardSummary(userId: number): Promise<DashboardSumm
 
   // 时间基准点
   const now = new Date();
-  // 7天后的日期 (用于判断即将过期)
-  const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   // 30天后的日期 (用于生成即将过期列表)
   const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
@@ -107,13 +103,9 @@ export async function getDashboardSummary(userId: number): Promise<DashboardSumm
     .from(subscriptions)
     .where(eq(subscriptions.userId, userId));
 
-  // 基础统计: 总数/已过期/即将过期
+  // 基础统计: 总数/已过期
   const total = allSubs.length;
   const expired = allSubs.filter((s) => new Date(s.expireDate) < now).length;
-  const expiringSoon = allSubs.filter((s) => {
-    const d = new Date(s.expireDate);
-    return d >= now && d <= in7Days;
-  }).length;
 
   // 本月时间范围
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -228,7 +220,6 @@ export async function getDashboardSummary(userId: number): Promise<DashboardSumm
   return {
     total,
     expired,
-    expiringSoon,
     monthlyExpectedCostItems,
     monthlyActualCostItems,
     prevMonthExpectedCostItems,

@@ -14,7 +14,6 @@ import { requireApiAuth } from "@/lib/session";
  * 返回数据结构：
  * - total: 订阅总数
  * - expired: 已过期订阅数
- * - expiringSoon: 7天内即将过期的订阅数
  * - monthlyExpectedCostItems: 本月预期费用项目（按到期日期筛选）
  * - monthlyActualCostItems: 本月实际费用项目（按开始日期筛选）
  * - prevMonthExpectedCostItems: 上月预期费用项目

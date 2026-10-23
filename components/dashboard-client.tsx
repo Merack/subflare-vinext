@@ -183,7 +183,7 @@ export default function DashboardClient({ initialData, initialExchangeRates }: D
     },
     {
       title: "即将到期",
-      value: data.expiringSoon ?? "-",
+      value: filteredExpiringSoon.length,
       icon: CalendarClock,
       desc: period === "month" ? "7 天内到期" : "30 天内到期",
       trend: null,
