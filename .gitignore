@@ -48,6 +48,7 @@ next-env.d.ts
 !.dev.vars.example
 
 dist
+.vinext
 .mcp.json
 AGENTS.md
 CLAUDE.md
