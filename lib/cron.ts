@@ -14,7 +14,7 @@ import { and, eq, lte } from "drizzle-orm";
 import { subscriptions, notificationChannels, subscriptionHistory, userSettings } from "@/db/schema";
 import { dispatchNotification } from "@/lib/notifications/dispatcher";
 import { buildExpiryNotification } from "@/lib/notifications/message";
-import { advanceExpireDate } from "@/lib/subscription-utils";
+import { advanceExpireDate, isValidTimeZone } from "@/lib/subscription-utils";
 import { SINGLE_USER_ID } from "@/lib/session";
 import { getDb } from "@/db";
 
@@ -97,7 +97,9 @@ export async function runCron(): Promise<{ sent: number; skipped?: boolean }> {
     .where(eq(userSettings.userId, SINGLE_USER_ID))
     .limit(1);
 
-  const timezone = settings?.timezone ?? "UTC";
+  // 库里的时区非法时会抛 RangeError 让整个定时任务停摆, 兜底为 UTC
+  const savedTimezone = settings?.timezone ?? "UTC";
+  const timezone = isValidTimeZone(savedTimezone) ? savedTimezone : "UTC";
   const notifyDeliveryMode = settings?.notifyDeliveryMode ?? "every_slot";
 
   // 获取用户配置的提醒小时数，默认为 [0]（午夜 0 点）
@@ -137,6 +139,42 @@ export async function runCron(): Promise<{ sent: number; skipped?: boolean }> {
       )
     );
 
+  // 到期日按日历日存储（UTC 零点），用 UTC 日期与用户本地“今天”比较，避免西半球时区少一天
+  const daysLeftOf = (expireDate: Date) =>
+    Math.ceil(
+      (Date.UTC(expireDate.getUTCFullYear(), expireDate.getUTCMonth(), expireDate.getUTCDate())
+        - Date.UTC(local.year, local.month, local.day)) / (1000 * 60 * 60 * 24)
+    );
+
+  // 处理自动续费：到期当天（剩余 0 天）推进到期日
+  // 放在通知之前且不依赖通知渠道/提醒模式, 否则关掉通知就永远不会自动续费
+  for (const sub of activeSubs) {
+    if (!sub.autoRenew || sub.billingCycle === "once") continue;
+    if (daysLeftOf(new Date(sub.expireDate)) !== 0) continue;
+
+    // 计算新的到期日期
+    const newExpireDate = advanceExpireDate(
+      new Date(sub.expireDate),
+      sub.billingCycle,
+      sub.billingCycleCount ?? 1
+    );
+
+    await db.insert(subscriptionHistory).values({
+      subscriptionId: sub.id,
+      renewalType: "auto",
+      previousExpireDate: sub.expireDate,
+      newExpireDate,
+      cost: sub.cost,
+      notes: null,
+    });
+
+    // 更新订阅的到期日期
+    await db
+      .update(subscriptions)
+      .set({ expireDate: newExpireDate, updatedAt: new Date() })
+      .where(eq(subscriptions.id, sub.id));
+  }
+
   // 查询所有已启用的通知渠道
   // 只有存在启用的通知渠道时才发送通知
   const enabledChannels = await db
@@ -154,20 +192,8 @@ export async function runCron(): Promise<{ sent: number; skipped?: boolean }> {
 
   // 遍历所有活跃订阅，检查是否需要发送提醒
   for (const sub of activeSubs) {
-    // 获取订阅的到期日期
-    const expireDate = new Date(sub.expireDate);
-
-    // 将到期日期转换为用户本地时间
-    const expireLocal = toTimezone(expireDate, timezone);
-
-    // 计算到期日期的零点时间戳（UTC）
-    const expireDayTs = Date.UTC(expireLocal.year, expireLocal.month, expireLocal.day);
-
-    // 计算今天的零点时间戳（UTC）
-    const todayTs = Date.UTC(local.year, local.month, local.day);
-
     // 计算剩余天数（向上取整）
-    const daysLeft = Math.ceil((expireDayTs - todayTs) / (1000 * 60 * 60 * 24));
+    const daysLeft = daysLeftOf(new Date(sub.expireDate));
 
     // 根据简单提醒模式判断是否命中发送条件
     const shouldNotify = sub.reminderMode === "daily_from_n_days"
@@ -177,7 +203,7 @@ export async function runCron(): Promise<{ sent: number; skipped?: boolean }> {
     if (!shouldNotify) continue;
 
     // 构建通知消息（纯文本 + HTML 两个版本，由渠道各自取用）
-    const payload = buildExpiryNotification(sub, daysLeft, timezone);
+    const payload = buildExpiryNotification(sub, daysLeft);
 
     // 发送通知
     await dispatchNotification(
@@ -191,34 +217,6 @@ export async function runCron(): Promise<{ sent: number; skipped?: boolean }> {
       notifyDeliveryMode
     );
     sent++;
-
-    // 处理自动续订
-    // 条件：
-    // 1. 今天到期（daysLeft === 0）
-    // 2. 开启了自动续订（autoRenew）
-    // 3. 不是一次性订阅（billingCycle !== "once"）
-    if (daysLeft === 0 && sub.autoRenew && sub.billingCycle !== "once") {
-      // 获取计费周期数量，默认为 1
-      const count = sub.billingCycleCount ?? 1;
-
-      // 计算新的到期日期
-      const newExpireDate = advanceExpireDate(expireDate, sub.billingCycle, count);
-
-      await db.insert(subscriptionHistory).values({
-        subscriptionId: sub.id,
-        renewalType: "auto",
-        previousExpireDate: sub.expireDate,
-        newExpireDate,
-        cost: sub.cost,
-        notes: null,
-      });
-
-      // 更新订阅的到期日期
-      await db
-        .update(subscriptions)
-        .set({ expireDate: newExpireDate, updatedAt: new Date() })
-        .where(eq(subscriptions.id, sub.id));
-    }
   }
 
   return { sent };

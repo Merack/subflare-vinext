@@ -14,14 +14,9 @@ export function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
-/** 按用户时区取 YYYY-MM-DD，避免 Worker 默认 UTC 导致到期日差一天 */
-function formatDateInTimezone(date: Date, timezone: string): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(date));
+/** 到期日按日历日存储（UTC 零点），取 UTC 日期即可；按用户时区换算会让西半球少一天 */
+function formatCalendarDate(date: Date): string {
+  return new Date(date).toISOString().slice(0, 10);
 }
 
 function buildPayload(title: string, lines: string[]): NotificationPayload {
@@ -46,14 +41,13 @@ function buildPayload(title: string, lines: string[]): NotificationPayload {
  */
 export function buildExpiryNotification(
   sub: Subscription,
-  daysLeft: number,
-  timezone: string
+  daysLeft: number
 ): NotificationPayload {
   const title = daysLeft === 0
     ? `⚠️ ${sub.name} 今天到期！`
     : `🔔 ${sub.name} 将在 ${daysLeft} 天后到期`;
 
-  const lines = [`到期日：${formatDateInTimezone(sub.expireDate, timezone)}`];
+  const lines = [`到期日：${formatCalendarDate(sub.expireDate)}`];
 
   if (sub.cost != null) {
     const cycle = getCycleLabel(sub);

@@ -10,7 +10,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8 sm:px-6">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4 py-8 sm:px-6">
       <Card className="w-full max-w-sm border-border/60 shadow-sm sm:max-w-md">
         <CardHeader className="space-y-2 px-6 pt-6 sm:px-8 sm:pt-8">
           <CardTitle className="text-center text-2xl">Subflare</CardTitle>

@@ -4,37 +4,9 @@ import { requirePageAuth } from "@/lib/session";
 import { eq } from "drizzle-orm";
 import AppLayout from "@/components/app-layout";
 import SettingsClient from "@/components/settings-client";
-import { getChannelDescriptor } from "@/lib/notifications/channel-descriptors";
-
-interface SettingsChannelItem {
-  id: number;
-  type: string;
-  name: string;
-  enabled: boolean;
-  hasConfig: boolean;
-  summary: string | null;
-}
-
-interface SettingsPreferences {
-  timezone: string;
-  notifyHours: number[];
-  notifyDeliveryMode: "every_slot" | "once_per_day";
-}
-
-function getChannelSummary(type: string, configRaw: string) {
-  try {
-    const descriptor = getChannelDescriptor(type);
-    const config = JSON.parse(configRaw) as Record<string, unknown>;
-
-    if (!descriptor) {
-      return { hasConfig: false, summary: null };
-    }
-
-    return descriptor.getSummary(config);
-  } catch {
-    return { hasConfig: false, summary: null };
-  }
-}
+import type { Channel } from "@/components/settings/channels-card";
+import type { NotificationPreferences } from "@/components/settings/preferences-card";
+import { getChannelSummary } from "@/lib/notifications/channel-descriptors";
 
 function parseNotifyHours(raw: string) {
   try {
@@ -53,7 +25,7 @@ export default async function SettingsPage() {
     db.select().from(notificationChannels).where(eq(notificationChannels.userId, session.userId)),
   ]);
 
-  const preferences: SettingsPreferences = settings[0]
+  const preferences: NotificationPreferences = settings[0]
     ? {
         timezone: settings[0].timezone,
         notifyHours: parseNotifyHours(settings[0].notifyHoursJson),
@@ -65,7 +37,7 @@ export default async function SettingsPage() {
         notifyDeliveryMode: "every_slot",
       };
 
-  const initialChannels: SettingsChannelItem[] = channels.map((channel) => ({
+  const initialChannels: Channel[] = channels.map((channel) => ({
     id: channel.id,
     type: channel.type,
     name: channel.name,

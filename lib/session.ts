@@ -52,10 +52,11 @@ export async function requirePageAuth(): Promise<SessionContext> {
   return session;
 }
 
-export async function requireApiAuth(): Promise<SessionContext> {
+// 未登录时返回 401 响应, 由调用方直接 return (抛 Response 会被框架当成 500)
+export async function requireApiAuth(): Promise<SessionContext | NextResponse> {
   const session = await getSession();
   if (!session) {
-    throw NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   return session;
 }

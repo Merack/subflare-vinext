@@ -49,6 +49,14 @@ export const STATUS_LABELS: Record<SubscriptionStatus, string> = {
   expired: "已过期",
 };
 
+/** 下拉框用的选项列表，由上面的标签映射派生，避免出现第二份文案 */
+export const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value, label }));
+
+export const STATUS_OPTIONS = (Object.keys(STATUS_LABELS) as SubscriptionStatus[]).map((value) => ({
+  value,
+  label: STATUS_LABELS[value],
+}));
+
 /**
  * 将日期转换为 HTML date input 元素所需的格式 (YYYY-MM-DD)
  *
@@ -62,6 +70,18 @@ export const STATUS_LABELS: Record<SubscriptionStatus, string> = {
 export function toDateInput(date: Date | null | undefined): string {
   if (!date) return "";
   return new Date(date).toISOString().split("T")[0];
+}
+
+/**
+ * 判断是否为合法的 IANA 时区（非法时区会让 toLocaleString / Intl 抛 RangeError）
+ */
+export function isValidTimeZone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -90,22 +110,34 @@ export function advanceExpireDate(expireDate: Date, billingCycle: BillingCycle, 
 
   switch (billingCycle) {
     case "daily":
-      next.setDate(next.getDate() + count);
+      next.setUTCDate(next.getUTCDate() + count);
       break;
     case "monthly":
-      next.setMonth(next.getMonth() + count);
-      break;
+      return addMonths(next, count);
     case "quarterly":
-      next.setMonth(next.getMonth() + count * 3);
-      break;
+      return addMonths(next, count * 3);
     case "yearly":
-      next.setFullYear(next.getFullYear() + count);
+      next.setUTCFullYear(next.getUTCFullYear() + count);
       break;
     case "once":
       // 一次性付款不推进日期
       break;
   }
 
+  return next;
+}
+
+/**
+ * 按月推进，并把“日”夹到目标月的最后一天
+ * 直接用 setMonth 会溢出: 1-31 加一个月变成 3-03, 8-31 加一个月变成 10-01
+ */
+function addMonths(date: Date, months: number): Date {
+  const next = new Date(date);
+  const day = next.getUTCDate();
+  next.setUTCDate(1);
+  next.setUTCMonth(next.getUTCMonth() + months);
+  const lastDay = new Date(Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0)).getUTCDate();
+  next.setUTCDate(Math.min(day, lastDay));
   return next;
 }
 
@@ -132,18 +164,54 @@ export function calcExpireDateFromStartDate(startDate: string, billingCycle: Bil
 }
 
 /**
- * 计算距离到期日期还有多少天
+ * 取日期所在的“日历日”日键 (YYYY-MM-DD)
+ *
+ * 到期日、开始日都按 UTC 零点存库存，所以日键要从 UTC 取，不能受浏览器时区影响
+ */
+export function getCalendarDayKey(value: Date | number | string): string {
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+/**
+ * 用户所在时区里的“今天”日键
+ *
+ * 和 lib/cron.ts 判断剩余天数的口径保持一致：按用户在设置里选的时区算日期
+ */
+export function getTodayKey(timezone: string, now: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+/** 两个日键相差的整天数（正数表示 toKey 在未来） */
+export function getDaysBetweenKeys(fromKey: string, toKey: string): number {
+  return Math.round((Date.parse(`${toKey}T00:00:00Z`) - Date.parse(`${fromKey}T00:00:00Z`)) / 86_400_000);
+}
+
+/**
+ * 计算距离到期日期还有多少天（按日历日，不用毫秒差）
  *
  * @param expireDate - 到期日期
- * @returns 剩余天数（向上取整），已过期返回负数
- *
- * @example
- * // 假设今天是 2024-03-10
- * getDaysLeft(new Date("2024-03-15")) // 5
- * getDaysLeft(new Date("2024-03-05")) // -5 (已过期5天)
+ * @param todayKey - 用户时区的今天，见 getTodayKey
+ * @returns 剩余整天数，到期当天为 0，已过期返回负数
  */
-export function getDaysLeft(expireDate: Date) {
-  return Math.ceil((new Date(expireDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+export function getDaysLeft(expireDate: Date | number | string, todayKey: string) {
+  return getDaysBetweenKeys(todayKey, getCalendarDayKey(expireDate));
+}
+
+/**
+ * 把“日历日”按它存的那一天显示出来
+ *
+ * 直接 toLocaleDateString 会按浏览器时区换算，西半球会显示成前一天
+ */
+export function formatCalendarDate(value: Date | number | string | null | undefined): string {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString("zh-CN", { timeZone: "UTC" });
 }
 
 /**
@@ -165,14 +233,16 @@ export function getDaysLeft(expireDate: Date) {
  *   expireDate: new Date("2024-03-20"),
  *   status: "active",
  *   reminderDays: 7
- * })
- * // 如果今天是 2024-03-15:
+ * }, "2024-03-15")
  * // result.daysLeft = 5
  * // result.isUrgent = true (5 <= 7)
  * // result.isExpired = false
  */
-export function getEffectiveStatus(subscription: Pick<Subscription, "expireDate" | "status" | "reminderDays" | "reminderMode">) {
-  const daysLeft = getDaysLeft(subscription.expireDate);
+export function getEffectiveStatus(
+  subscription: Pick<Subscription, "expireDate" | "status" | "reminderDays" | "reminderMode">,
+  todayKey: string,
+) {
+  const daysLeft = getDaysLeft(subscription.expireDate, todayKey);
   const isExpired = daysLeft < 0 && subscription.status !== "disabled";
   return {
     daysLeft,

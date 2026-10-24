@@ -11,6 +11,7 @@ const cleanupSchema = z.object({
 
 export async function GET() {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const db = await getDb();
 
   const items = await db
@@ -36,6 +37,7 @@ export async function GET() {
 
 export async function DELETE(request: NextRequest) {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const db = await getDb();
 
   const body = await request.json() as unknown;
@@ -50,21 +52,17 @@ export async function DELETE(request: NextRequest) {
 
   // Use subscription IDs (small count) instead of event IDs (large count)
   // to avoid exceeding D1's 100 binding parameter limit
-  const userSubs = await db
+  // 用子查询而不是 id 数组：订阅数超过 100 时会撞上 D1 的绑定参数上限
+  const userSubIds = db
     .select({ id: subscriptions.id })
     .from(subscriptions)
     .where(eq(subscriptions.userId, session.userId));
-
-  const subIds = userSubs.map((s) => s.id);
-  if (subIds.length === 0) {
-    return NextResponse.json({ success: true, deletedCount: 0 });
-  }
 
   const deleted = await db
     .delete(notificationEvents)
     .where(
       and(
-        inArray(notificationEvents.subscriptionId, subIds),
+        inArray(notificationEvents.subscriptionId, userSubIds),
         lt(notificationEvents.createdAt, cutoff)
       )
     )

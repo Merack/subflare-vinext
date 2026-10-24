@@ -82,8 +82,9 @@ interface RouteParams {
  * Response: { id: 123, name: "Netflix", ... }
  */
 export async function GET(_request: NextRequest, { params }: RouteParams) {
-  // 验证用户身份，未登录会抛出 401 错误
+  // 验证用户身份，未登录直接返回 401
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   // 解析路由参数获取订阅 ID
   const { id } = await params;
   // 获取数据库连接
@@ -122,6 +123,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   // 验证用户身份
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   // 解析路由参数
   const { id } = await params;
   // 解析请求体
@@ -195,6 +197,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   // 验证用户身份
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   // 解析路由参数
   const { id } = await params;
   const db = await getDb();

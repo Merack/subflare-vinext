@@ -12,6 +12,7 @@ interface RouteParams {
 
 export async function POST(_request: NextRequest, { params }: RouteParams) {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const { id } = await params;
   const db = await getDb();
 

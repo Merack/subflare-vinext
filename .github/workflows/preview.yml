@@ -1,0 +1,45 @@
+name: Preview (dev)
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+concurrency:
+  group: preview-dev
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      D1_ID: ${{ secrets.D1_ID }}
+      KV_ID: ${{ secrets.KV_ID }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Fill Wrangler placeholders
+        run: bash scripts/fill-wrangler-placeholders.sh
+
+      # 只需构建产物: wrangler 会通过 .wrangler/deploy/config.json 自动使用 dist/server/wrangler.json
+      - name: Build
+        run: pnpm build
+
+      - name: Deploy Preview
+        run: npx wrangler preview --name dev

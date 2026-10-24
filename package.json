@@ -4,12 +4,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "vite dev",
     "build": "vite build",
-    "build:next": "next build",
-    "start": "next start",
     "lint": "eslint",
     "check:notify": "node --experimental-strip-types scripts/check-notification-message.ts",
+    "check:dates": "node --experimental-strip-types scripts/check-subscription-dates.ts",
     "dev:vinext": "vite dev --port 3001",
     "deploy:vinext": "vinext deploy",
     "db:migrations:apply": "wrangler d1 migrations apply DB --remote",
@@ -54,7 +53,7 @@
     "typescript": "^5.9.3",
     "vinext": "^0.0.35",
     "vite": "^8.0.11",
-    "wrangler": "^4.90.0"
+    "wrangler": "^4.152.0"
   },
   "type": "module",
   "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319"

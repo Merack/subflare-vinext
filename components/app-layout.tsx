@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, List, Settings, LogOut, Bell, Menu } from "lucide-react";
+import { LayoutDashboard, List, Settings, LogOut, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -30,7 +30,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-background">
+    <div className="flex flex-col md:flex-row min-h-dvh bg-background">
       {/* Mobile Top Header */}
       <header className="md:hidden flex items-center justify-between p-4 border-b bg-background sticky top-0 z-10">
         <div className="flex items-center gap-2">
@@ -83,10 +83,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-4 md:p-6 overflow-auto pb-20 md:pb-6">{children}</main>
+      <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">{children}</main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background flex justify-around p-2 pb-safe z-10">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background flex justify-around p-2 pb-[calc(0.5rem_+_env(safe-area-inset-bottom))] z-10">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href;
           return (

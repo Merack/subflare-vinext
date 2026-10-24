@@ -11,6 +11,7 @@ import { getDb } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import type { Subscription } from "@/db/schema";
+import { getCalendarDayKey } from "@/lib/subscription-utils";
 
 /**
  * 费用项
@@ -39,8 +40,6 @@ export interface DashboardSummary {
   total: number;
   /** 已过期订阅数 */
   expired: number;
-  /** 即将过期订阅数 */
-  expiringSoon: number;
   /** 本月预期费用项 (按过期日期统计) */
   monthlyExpectedCostItems: CostItems[];
   /** 本月实际费用项 (按开始日期统计) */
@@ -82,24 +81,23 @@ export interface DashboardSummaryResponse {
 
 /**
  * 获取用户仪表盘汇总数据
- * 
+ *
  * @param userId - 用户ID
+ * @param todayKey - 用户时区的今天 (YYYY-MM-DD)，来自 getUserTimezone + getTodayKey
  * @returns 包含完整统计信息的仪表盘汇总数据
- * 
+ *
  * @example
- * const summary = await getDashboardSummary(1)
+ * const summary = await getDashboardSummary(1, getTodayKey("Asia/Shanghai"))
  * console.log(`总订阅数: ${summary.total}`)
  * console.log(`本月预期费用: ${summary.monthlyExpectedCostItems}`)
  */
-export async function getDashboardSummary(userId: number): Promise<DashboardSummary> {
+export async function getDashboardSummary(userId: number, todayKey: string): Promise<DashboardSummary> {
   const db = await getDb();
 
-  // 时间基准点
-  const now = new Date();
-  // 7天后的日期 (用于判断即将过期)
-  const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  // 30天后的日期 (用于生成即将过期列表)
-  const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  // 时间基准点: 全部按用户时区的日历日派生，避免服务端 UTC 和用户本地日期打架
+  const [year, month, day] = todayKey.split("-").map(Number);
+  const dayKeyOf = (date: Date) => getCalendarDayKey(date);
+  const dayPlus = (days: number) => dayKeyOf(new Date(Date.UTC(year, month - 1, day + days)));
 
   // 获取用户所有订阅数据
   const allSubs = await db
@@ -107,27 +105,18 @@ export async function getDashboardSummary(userId: number): Promise<DashboardSumm
     .from(subscriptions)
     .where(eq(subscriptions.userId, userId));
 
-  // 基础统计: 总数/已过期/即将过期
+  // 基础统计: 总数
   const total = allSubs.length;
-  const expired = allSubs.filter((s) => new Date(s.expireDate) < now).length;
-  const expiringSoon = allSubs.filter((s) => {
-    const d = new Date(s.expireDate);
-    return d >= now && d <= in7Days;
-  }).length;
 
-  // 本月时间范围
-  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-  // 上月时间范围
-  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-
-  // 本年时间范围
-  const thisYearStart = new Date(now.getFullYear(), 0, 1);
-  const thisYearEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
-  // 上年时间范围
-  const prevYearStart = new Date(now.getFullYear() - 1, 0, 1);
-  const prevYearEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
+  // 本月/上月/本年/上年的时间范围 (UTC 零点对齐，因为到期日按日历日存)
+  const thisMonthStart = new Date(Date.UTC(year, month - 1, 1));
+  const thisMonthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59));
+  const prevMonthStart = new Date(Date.UTC(year, month - 2, 1));
+  const prevMonthEnd = new Date(Date.UTC(year, month - 1, 0, 23, 59, 59));
+  const thisYearStart = new Date(Date.UTC(year, 0, 1));
+  const thisYearEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59));
+  const prevYearStart = new Date(Date.UTC(year - 1, 0, 1));
+  const prevYearEnd = new Date(Date.UTC(year - 1, 11, 31, 23, 59, 59));
 
   /**
    * 按过期日期筛选费用项
@@ -176,10 +165,10 @@ export async function getDashboardSummary(userId: number): Promise<DashboardSumm
   const prevYearActualCostItems = filterByStart(prevYearStart, prevYearEnd);
 
   // 状态统计: active/paused/disabled/expired
-  // 注意: 过期订阅如果未被禁用, 状态会显示为 expired
+  // 注意: 到期日早于“今天”且未被禁用的订阅, 状态会显示为 expired
   const statusCounts: Record<string, number> = { active: 0, paused: 0, disabled: 0, expired: 0 };
   for (const s of allSubs) {
-    const isExpired = new Date(s.expireDate) < now;
+    const isExpired = dayKeyOf(s.expireDate) < todayKey;
     const effectiveStatus = isExpired && s.status !== "disabled" ? "expired" : s.status;
     statusCounts[effectiveStatus] = (statusCounts[effectiveStatus] ?? 0) + 1;
   }
@@ -211,24 +200,23 @@ export async function getDashboardSummary(userId: number): Promise<DashboardSumm
   const categoryMonthlyCosts = buildCategoryCosts(allSubs, thisMonthStart, thisMonthEnd);
   const categoryYearlyCosts = buildCategoryCosts(allSubs, thisYearStart, thisYearEnd);
 
-  // 即将过期列表 (30天内), 按过期日期升序排列
+  // 即将过期列表 (30天内, 含今天), 按过期日期升序排列
   const expiringSoonList = allSubs
     .filter((s) => {
-      const d = new Date(s.expireDate);
-      return d >= now && d <= in30Days;
+      const key = dayKeyOf(s.expireDate);
+      return key >= todayKey && key <= dayPlus(30);
     })
     .sort((a, b) => new Date(a.expireDate).getTime() - new Date(b.expireDate).getTime());
 
   // 已过期列表 (排除已禁用的), 按过期日期降序排列
   const expiredList = allSubs
-    .filter((s) => new Date(s.expireDate) < now && s.status !== "disabled")
+    .filter((s) => dayKeyOf(s.expireDate) < todayKey && s.status !== "disabled")
     .sort((a, b) => new Date(b.expireDate).getTime() - new Date(a.expireDate).getTime());
     // .slice(0, 20);
 
   return {
     total,
-    expired,
-    expiringSoon,
+    expired: expiredList.length,
     monthlyExpectedCostItems,
     monthlyActualCostItems,
     prevMonthExpectedCostItems,

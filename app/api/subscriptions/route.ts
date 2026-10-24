@@ -32,8 +32,9 @@ const subscriptionSchema = z.object({
 // 路径: /api/subscriptions
 // ============================================================================
 export async function GET() {
-  // 获取当前会话，验证用户是否已登录. 如果未登录将抛出异常
+  // 获取当前会话，验证用户是否已登录. 未登录时直接返回 401
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const db = await getDb();
   
   // 从数据库中查询属于当前用户的、且未被软删除的所有订阅项，
@@ -54,6 +55,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   // 鉴权
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   
   // 解析请求体数据
   const body = await request.json() as unknown;

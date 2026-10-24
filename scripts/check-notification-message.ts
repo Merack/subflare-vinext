@@ -22,7 +22,7 @@ function makeSub(overrides: Partial<Subscription> = {}): Subscription {
     billingCycleCount: 1,
     autoRenew: true,
     startDate: null,
-    expireDate: new Date("2026-03-24T16:00:00Z"),
+    expireDate: new Date("2026-03-25T00:00:00Z"),
     reminderDays: 7,
     reminderMode: "daily_from_n_days",
     status: "active",
@@ -33,10 +33,10 @@ function makeSub(overrides: Partial<Subscription> = {}): Subscription {
 }
 
 // 提前提醒：含金额/周期/分类/自动续费，纯文本无标签且多行
-const payload = buildExpiryNotification(makeSub(), 7, "Asia/Shanghai");
+const payload = buildExpiryNotification(makeSub(), 7);
 assert.equal(payload.title, "🔔 Netflix 将在 7 天后到期");
 assert.match(payload.text, /^🔔 Netflix 将在 7 天后到期\n\n/);
-assert.match(payload.text, /到期日：2026-03-25/, "按用户时区取日期");
+assert.match(payload.text, /到期日：2026-03-25/, "到期日按日历日(UTC)取，西半球时区也不差一天");
 assert.match(payload.text, /金额：68 CNY \/ 每月/);
 assert.match(payload.text, /分类：流媒体/);
 assert.match(payload.text, /自动续费：已开启/);
@@ -54,14 +54,13 @@ assert.doesNotMatch(payload.text, /备注：|链接：/);
 const expired = buildExpiryNotification(
   makeSub({
     name: "A <script>&\"B\"",
-    expireDate: new Date("2026-03-25T01:00:00Z"),
+    expireDate: new Date("2026-03-25T00:00:00Z"),
     notes: "家庭共享",
     url: "https://example.com/a?b=1&c=2",
     cost: null,
     autoRenew: false,
   }),
-  0,
-  "Asia/Shanghai"
+  0
 );
 assert.match(expired.title, /今天到期！/);
 assert.match(expired.text, /备注：家庭共享/);

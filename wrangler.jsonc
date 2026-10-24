@@ -44,6 +44,25 @@
 			"0 * * * *"
 		]
 	},
+	// Worker Previews(dev 分支预览)复用 development 环境的 D1/KV, 避免写生产数据
+	"previews": {
+		"d1_databases": [
+			{
+				"binding": "DB",
+				"database_id": "ca032790-da0e-46ad-a650-c33dc82053bf",
+				"migrations_dir": "drizzle"
+			}
+		],
+		"kv_namespaces": [
+			{
+				"binding": "KV",
+				"id": "19ce58a4b90c4cfea0ed238833eeea89"
+			}
+		],
+		"images": {
+			"binding": "IMAGES"
+		}
+	},
 	"env": {
 		"development": {
 			"d1_databases": [

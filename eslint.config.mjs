@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // vinext 构建产物与 wrangler 生成的类型文件
+    "dist/**",
+    "worker-configuration.d.ts",
   ]),
 ]);
 

@@ -4,15 +4,17 @@ import { userSettings } from "@/db/schema";
 import { requireApiAuth } from "@/lib/session";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { isValidTimeZone } from "@/lib/subscription-utils";
 
 const updateSchema = z.object({
-  timezone: z.string().min(1).optional(),
+  timezone: z.string().min(1).refine(isValidTimeZone, "无效的时区").optional(),
   notifyHours: z.array(z.number().int().min(0).max(23)).min(1).optional(),
   notifyDeliveryMode: z.enum(["every_slot", "once_per_day"]).optional(),
 });
 
 export async function GET() {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const db = await getDb();
 
   const [settings] = await db
@@ -43,6 +45,7 @@ export async function GET() {
 
 export async function PUT(request: NextRequest) {
   const session = await requireApiAuth();
+  if (session instanceof NextResponse) return session;
   const db = await getDb();
 
   const body = await request.json() as unknown;
